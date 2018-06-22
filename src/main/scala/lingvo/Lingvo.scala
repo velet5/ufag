@@ -12,14 +12,6 @@ import persistence.Db.Provider
 
 import scala.concurrent.{Future, Promise}
 
-//object Lingvo extends App {
-//
-//  val lingvo = new Lingvo(null, null, new Settings)
-//
-//  println(lingvo.isCyrillic("папа"))
-//  println(lingvo.isCyrillic("dad"))
-//
-//}
 
 class Lingvo(client: Client, db: Db) {
 
@@ -103,13 +95,9 @@ class Lingvo(client: Client, db: Db) {
       .map {string =>
         processor.process(string) match {
           case Right(markdown) =>
-            println("RIGHT")
-            println(markdown)
             db.saveArticle(text, string, Provider.Lingvo)
             markdown
           case Left(message) =>
-            println("LEFT")
-            println(message)
             message
         }
       }

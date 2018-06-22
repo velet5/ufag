@@ -3,6 +3,8 @@ package persistence
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
+import org.slf4j.LoggerFactory
+
 import scala.concurrent.Future
 
 
@@ -52,6 +54,8 @@ class Memory(db: Db) {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
+  private val log = LoggerFactory.getLogger(getClass)
+
   def remember(chatId: Long, text: String, messageId: Long): Unit = {
     db.rememberQuery(chatId, text, ZonedDateTime.now(), messageId)
   }
@@ -60,7 +64,7 @@ class Memory(db: Db) {
     db
       .get(chatId, text)
       .map(_.map(q => Occurance(q.text, q.time, q.messageId)))
-      .recover {case ex => ex.printStackTrace(); None}
+      .recover {case ex => log.error("Recall failure", ex); None}
   }
 
   def fag(occurance: Occurance): String = {

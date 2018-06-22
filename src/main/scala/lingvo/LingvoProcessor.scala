@@ -3,6 +3,7 @@ package lingvo
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import org.slf4j.LoggerFactory
 
 import scala.io.Source
 import scala.util.Try
@@ -17,26 +18,6 @@ object LingvoProcessor {
 
   private val romanTen = Vector("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X")
   private val romans: Vector[String] = romanTen ++ romanTen.map("X" + _) ++ romanTen.map("XX" + _)
-//
-
-//  def main(args: Array[String]): Unit = {
-//    val beverage: String = Source.fromFile("/home/oarshinskii/beverage.json").mkString
-//    val reproduce: String = Source.fromFile("/home/oarshinskii/reproduce.json").mkString
-//    val like: String = Source.fromFile("/home/oarshinskii/like.json").mkString
-//    val tear: String = Source.fromFile("/home/oarshinskii/tear.json").mkString
-//    val jack: String = Source.fromFile("/home/oarshinskii/jack.json").mkString
-//
-//    val processor = new LingvoProcessor
-//    println(processor.process(beverage))
-//    println("++++++++++++++++++++++++++")
-//    println(processor.process(reproduce))
-//    println("++++++++++++++++++++++++++")
-//    println(processor.process(like))
-//    println("++++++++++++++++++++++++++")
-//    println(processor.process(tear))
-//    println("++++++++++++++++++++++++++")
-//    println(processor.process(jack))
-//  }
   
 }
 
@@ -44,6 +25,8 @@ object LingvoProcessor {
 class LingvoProcessor {
 
   import LingvoProcessor._
+
+  private val log = LoggerFactory.getLogger(getClass)
 
   private val emptyResult = "*Ничего не найдено*"
   private val error = "*Ошибка работы сервиса*"
@@ -53,7 +36,7 @@ class LingvoProcessor {
       if (json.startsWith("[")) {
         val tried: Try[Seq[ArticleModel]] =
           Try(mapper.readValue[Array[ArticleModel]](json, classOf[Array[ArticleModel]]))
-        tried.failed.foreach(_.printStackTrace())
+        tried.failed.foreach(log.error("Error parsing lingvo json", _))
         tried.map(process).toOption.toRight(error)
       } else if (json.contains("No translations found")) {
         Left(emptyResult)
@@ -94,11 +77,9 @@ class LingvoProcessor {
     node.node match {
       case NodeType.Paragraph =>
         processMarkup(node.markup)
-        //sb append "\n"
 
       case NodeType.List =>
         node.items.foreach(processNode)
-        //sb.append("\n")
 
       case NodeType.Abbrev =>
         sb append "_" append node.text append "_ "

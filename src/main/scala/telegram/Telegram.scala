@@ -9,6 +9,7 @@ import lingvo.Lingvo
 import org.apache.http.HttpHeaders
 import org.apache.http.entity.ContentType
 import org.apache.http.message.BasicHeader
+import org.slf4j.LoggerFactory
 import oxford.Oxford
 import persistence.{Db, Memory}
 
@@ -29,6 +30,8 @@ class Telegram {
   val sendMessageUri: String = telegramApi + token + sendMessage_
   val forwardMessageUri: String = telegramApi + token + forwardMessage_
 
+  private val log = LoggerFactory.getLogger(getClass)
+
   val client = new Client
   val db = new Db
   val lingvo = new Lingvo(client, db)
@@ -40,8 +43,7 @@ class Telegram {
 
 
   def process(json: String): Unit = {
-    println("GOT UPDATE")
-    println(json)
+    log.info(s"Processing $json")
     val update = mapper.readValue(json, classOf[Update])
     process(update)
   }
@@ -49,7 +51,7 @@ class Telegram {
 
   def process(update: Update): Unit = {
     if (ask.isAsk(update)) {
-      println("is ask")
+      log.info("Asking detected")
       for {
         message <- update.message
         reply <- message.replyToMessage
@@ -61,10 +63,10 @@ class Telegram {
           val response = SendMessage(from.id, text, replyToMessageId = Some(asking.originalMessageId))
 
           sendMessage(response) onComplete {
-            case Success(value) =>
-              println(value)
+            case Success(_) =>
+
             case Failure(ex) =>
-              ex.printStackTrace()
+              log.error("Asking error", ex)
           }
         })
       }
@@ -76,12 +78,12 @@ class Telegram {
       messageText <- message.text
       text = messageText.toLowerCase
     } {
-      println(text)
       val chatId = message.chat.id
       val entities = message.entities
 
       if (entities != null && entities.exists(_.`type` == "bot_command")) {
-        println("COMMAND")
+        log.info(s"Got command $text")
+
         if (text == "/help" || text == "/start") {
           val helpText =
             "Бот работает как англо-русский словарь.\n" +
@@ -92,8 +94,8 @@ class Telegram {
               "Использует API https://www.lingvolive.com/"
           val sent = sendMessage(SendMessage(chatId, helpText))
           sent onComplete {
-            case Success(response) => println(response)
-            case Failure(ex) => ex.printStackTrace()
+            case Success(_) =>
+            case Failure(ex) => log.error("Sending error", ex)
           }
         } else if (text == "/stat") {
           memory.stat().foreach { stat =>
@@ -110,8 +112,8 @@ class Telegram {
           oxford.define(request).map {definition =>
             sendMessage(SendMessage(chatId, definition))
           }.onComplete {
-            case Success(value) => println(value)
-            case Failure(ex) => ex.printStackTrace()
+            case Success(_) =>
+            case Failure(ex) => log.error("Oxford error", ex)
           }
         } else{
           sendMessage(SendMessage(chatId, text = "Неизвестная команда"))
@@ -123,10 +125,9 @@ class Telegram {
               .recall(chatId, text)
               .map {
                 case None =>
-                  println("NOT RECALL")
                   process(SendMessage(chatId, value), chatId, text, remember = true)
+                  
                 case Some(occurance) =>
-                  println("RECALL")
                   process(
                     SendMessage(chatId, memory.fag(occurance), replyToMessageId = Some(occurance.messageId)),
                     chatId,
@@ -136,8 +137,7 @@ class Telegram {
               }
 
           case Failure(ex) =>
-            println("ERROR LINGVO")
-            ex.printStackTrace()
+            log.error("Translation error", ex)
             process(SendMessage(chatId, ex.getMessage), chatId, text)
         }
       }
@@ -154,9 +154,6 @@ class Telegram {
 
     eventualResponse onComplete {
       case Success(response) =>
-        println(response.status)
-        println(response.body)
-
         response.body.foreach {body =>
           val tried = Try(mapper.readValue(body, classOf[TelegramResponse]))
           tried.foreach {tr =>
@@ -164,10 +161,10 @@ class Telegram {
               memory.remember(chatId, searchText, messageId.getOrElse(tr.result.messageId))
             }
           }
-          tried.failed.foreach(_.printStackTrace())
+          tried.failed.foreach(log.error(s"Can't process $value", _))
         }
 
-      case Failure(ex) => ex.printStackTrace()
+      case Failure(ex) => log.error(s"Can't perform request $value", ex)
     }
   }
 
@@ -177,11 +174,7 @@ class Telegram {
     val contentType = new BasicHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString)
     val eventualResponse = client.post(sendMessageUri, text, contentType)
 
-    eventualResponse.failed.foreach(_.printStackTrace())
-    eventualResponse.foreach(r => {
-      println("TELEGRAM RESPONDED")
-      println(r)
-    })
+    eventualResponse.failed.foreach(log.error(s"Can't send message $response", _))
 
     eventualResponse
   }

@@ -3,6 +3,8 @@ package telegram
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import configuration.Configuration
+import org.slf4j.LoggerFactory
 import persistence.Db
 
 import scala.concurrent.Future
@@ -10,8 +12,11 @@ import scala.util.{Failure, Success, Try}
 
 class Ask(telegram: Telegram, db: Db) {
 
+  private val log = LoggerFactory.getLogger(getClass)
+
   private val mapper = new ObjectMapper().registerModule(DefaultScalaModule).setSerializationInclusion(Include.NON_NULL)
-  private val ownerId = 87804011L
+  private val ownerId = Configuration.properties.ufag.ownerId
+
   import scala.concurrent.ExecutionContext.Implicits.global
 
   def isAsk(update: Update): Boolean = {
@@ -38,16 +43,11 @@ class Ask(telegram: Telegram, db: Db) {
             }
             
           case Failure(ex) =>
-            ex.printStackTrace()
+            log.error(s"Can't forward $forwardingResponse", ex)
         }
       } else {
         val response = SendMessage(message.chat.id, "Напишите ваше сообщение после `/ask `.")
-        telegram.sendMessage(response) onComplete {
-          case Success(value) =>
-            println(value)
-          case Failure(ex) =>
-            ex.printStackTrace()
-        }
+        telegram.sendMessage(response) onComplete (_.failed.foreach(log.error("Can't send", _)))
       }
     }
   }

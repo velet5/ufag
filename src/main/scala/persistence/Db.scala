@@ -4,6 +4,7 @@ import java.time.ZonedDateTime
 import java.util.concurrent.{LinkedBlockingQueue, ThreadPoolExecutor, TimeUnit}
 
 import configuration.Configuration
+import org.slf4j.LoggerFactory
 import scalikejdbc._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -62,6 +63,8 @@ object Db {
 class Db {
 
   import Db._
+
+  private val log = LoggerFactory.getLogger(getClass)
 
   def rememberQuery(chatId: Long, text: String, time: ZonedDateTime, messageId: Long): Future[Unit] = {
     Future {
@@ -153,7 +156,7 @@ class Db {
       }.map(Asking(_)).single().apply()
     }
 
-    tried.failed.foreach(_.printStackTrace())
+    tried.failed.foreach(log.error("asking error", _))
 
     tried
   }

@@ -10,6 +10,7 @@ import org.apache.http.entity.StringEntity
 import org.apache.http.impl.nio.client.{CloseableHttpAsyncClient, HttpAsyncClientBuilder}
 import org.apache.http.ssl.SSLContextBuilder
 import org.apache.http.{Header, HttpResponse}
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.{Future, Promise}
 import scala.io.Source
@@ -36,16 +37,16 @@ class Client {
 
   import Client._
 
+  private val log = LoggerFactory.getLogger(getClass)
+
   client.start()
 
   // ------------------------------- Api -------------------------------
 
   def get(uri: String, headers: Header*): Future[Response] = {
-    println("HTTP GET")
     val request = new HttpGet(uri)
     
     headers.foreach(request.setHeader)
-    println("HTTP execution")
     execute(request)
   }
 
@@ -73,6 +74,8 @@ class Client {
 
 
   private def execute(request: HttpUriRequest): Future[Response] = {
+    log.info(s"Executing ${request.toString}")
+
     val promise = Promise[Response]()
 
     client.execute(request, new FutureCallback[HttpResponse] {

@@ -4,12 +4,15 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
+import org.slf4j.LoggerFactory
 import telegram.Telegram
 
 import scala.concurrent.{ExecutionContext, Future}
 
 
 class Server(port: Int) extends Directives {
+
+  private val log = LoggerFactory.getLogger(getClass)
 
   private implicit val system: ActorSystem = ActorSystem("my-system")
   private implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -21,7 +24,7 @@ class Server(port: Int) extends Directives {
     path("ufag") {
       post {
         entity(as[String]) {text =>
-          println("GOT REQUEST: " + text)
+          log.info("/ufag is reached")
           telegram.process(text)
           complete("")
         }
@@ -38,12 +41,16 @@ class Server(port: Int) extends Directives {
 
 
 class RunningServer(system: ActorSystem, bindingFuture: Future[Http.ServerBinding]) {
+  private val log = LoggerFactory.getLogger(getClass)
+
   private implicit val executionContext: ExecutionContext = system.dispatcher
 
   def stop(): Unit = {
+    log.info("Unbiding the future")
     bindingFuture
       .flatMap(_.unbind())
       .onComplete(_ => {
+        log.info("terminating")
         system.terminate()
       })
   }
