@@ -2,6 +2,7 @@ package http
 
 import java.nio.charset.StandardCharsets
 
+import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.{HttpGet, HttpPost, HttpUriRequest}
 import org.apache.http.concurrent.FutureCallback
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy
@@ -13,7 +14,6 @@ import org.apache.http.{Header, HttpResponse}
 import scala.concurrent.{Future, Promise}
 import scala.io.Source
 
-
 object Client {
 
   /** Java complains about Lingvo.com SSL certificate */
@@ -22,8 +22,11 @@ object Client {
        .loadTrustMaterial(new TrustSelfSignedStrategy())
        .build()
 
+  private val config: RequestConfig = RequestConfig.custom().setConnectTimeout(500).build()
   private val client: CloseableHttpAsyncClient =
-    HttpAsyncClientBuilder.create().setSSLContext(sslContext).build()
+    HttpAsyncClientBuilder.create()
+      .setDefaultRequestConfig(config)
+      .setSSLContext(sslContext).build()
 
   case class Response(status: Int, body: Option[String])
   
@@ -38,9 +41,11 @@ class Client {
   // ------------------------------- Api -------------------------------
 
   def get(uri: String, headers: Header*): Future[Response] = {
+    println("HTTP GET")
     val request = new HttpGet(uri)
     
     headers.foreach(request.setHeader)
+    println("HTTP execution")
     execute(request)
   }
 
@@ -72,8 +77,9 @@ class Client {
 
     client.execute(request, new FutureCallback[HttpResponse] {
       override def completed(result: HttpResponse): Unit = {
+        val encoding = StandardCharsets.UTF_8.name()
         val code = result.getStatusLine.getStatusCode
-        val entity = Source.fromInputStream(result.getEntity.getContent).mkString
+        val entity = Source.fromInputStream(result.getEntity.getContent, encoding).mkString
         val body = if (entity != null && entity.nonEmpty) Some(entity) else None
 
         promise.success(Response(code, body))
