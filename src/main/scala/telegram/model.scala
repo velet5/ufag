@@ -21,7 +21,7 @@ case class Message(date: Long,
                    from: Chat,
                    text: Option[String],
                    replyToMessage: Option[Message],
-                   entities: Seq[MessageEntity],
+                   entities: Option[Seq[MessageEntity]],
                    forwardFrom: Option[User])
 
 @JsonNaming(classOf[SnakeCaseStrategy])
@@ -35,7 +35,7 @@ case class Update(updateId: Long,
 
 
 @JsonNaming(classOf[SnakeCaseStrategy])
-case class SendMessage(chatId: Long,
+case class TelegramSendMessage(chatId: Long,
                        text: String,
                        parseMode: Option[String] = Some("Markdown"),
                        replyToMessageId: Option[Long] = None)

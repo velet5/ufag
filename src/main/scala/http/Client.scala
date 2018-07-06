@@ -15,8 +15,8 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.{Future, Promise}
 import scala.io.Source
 
-object Client {
 
+object Client {
   /** Java complains about Lingvo.com SSL certificate */
   private val sslContext =
      SSLContextBuilder.create()
@@ -30,16 +30,16 @@ object Client {
       .setSSLContext(sslContext).build()
 
   case class Response(status: Int, body: Option[String])
-  
+
+  client.start()
 }
 
-class Client {
 
+class Client {
+  
   import Client._
 
   private val log = LoggerFactory.getLogger(getClass)
-
-  client.start()
 
   // ------------------------------- Api -------------------------------
 

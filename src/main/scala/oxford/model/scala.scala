@@ -21,7 +21,7 @@ case class LexicalEntry(entries: Seq[Entry])
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 case class Entry(grammaticalFeatures: Seq[GrammaticalFeature],
-                        senses: Seq[Sense])
+                 senses: Seq[Sense])
 
 
 @JsonIgnoreProperties(ignoreUnknown = true)
