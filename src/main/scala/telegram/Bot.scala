@@ -11,7 +11,6 @@ import org.apache.http.HttpHeaders
 import org.apache.http.entity.ContentType
 import org.apache.http.message.BasicHeader
 import org.slf4j.LoggerFactory
-import oxford.Oxford
 import persistence.{Db, Memory}
 
 import scala.concurrent.Future
@@ -33,12 +32,11 @@ class Bot {
 
   private val log = LoggerFactory.getLogger(getClass)
 
-  val client = new Client
-  val db = new Db
-  val lingvo = new Lingvo(client, db)
-  val oxford = new Oxford(db, client)
-  val memory = new Memory(db)
-  val ask = new Ask(this, db)
+  private val client = new Client
+  private val db = new Db
+  private val lingvo = new Lingvo(client, db)
+  private val memory = new Memory(db)
+  private val ask = new Ask(this, db)
 
   private val mapper = new ObjectMapper().registerModule(DefaultScalaModule).setSerializationInclusion(Include.NON_NULL)
 
@@ -88,31 +86,9 @@ class Bot {
       if (entities.exists(_.exists(_.`type` == "bot_command"))) {
         log.info(s"Got command $text")
 
-        if (text == "/start") {
-          val helpText =
-            "Бот работает как англо-русский словарь.\n" +
-              "Просто напишите ему слово и он сделает всё возможное чтобы найти словарную статью.\n" +
-              "Не является полноценным переводчиком, вы не можете переводить с его помощью целые предложения.\n" +
-              "Если вы в течение месяца спросите одно и то же слово более одного раза - бот назовёт вас п\\*дором.\n" +
-              "И помните - учите английский, а то чо как эти в самом деле.\n\n" +
-              "Использует API https://www.lingvolive.com/"
-          sendMessage(TelegramSendMessage(chatId, helpText))
-        } else if (text == "/stat") {
-          memory.stat().foreach { stat =>
-            val statText =
-              s"*Пользователей*: ${stat.userCount}.\n" +
-                s"*Запросов*: ${stat.queryCount}.\n" +
-                s"*Слов запомнено*: ${stat.wordCount}."
-            sendMessage(TelegramSendMessage(chatId, statText))
-          }
-        } else if (text == "/ask" || text.startsWith("/ask ")) {
+        if (text == "/ask" || text.startsWith("/ask ")) {
           ask.process(message)
-        } else if (text.startsWith("/ox ")) {
-          val request = text.substring(4)
-          oxford.define(request).map {definition =>
-            sendMessage(TelegramSendMessage(chatId, definition))
-          }
-        } else{
+        } else {
           sendMessage(TelegramSendMessage(chatId, text = s"Неизвестная команда $text"))
         }
       } else {

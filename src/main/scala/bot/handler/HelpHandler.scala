@@ -5,7 +5,7 @@ import bot.{Help, Outcome, SendMessage}
 import scala.concurrent.Future
 
 private object HelpHandler {
-  private val message =
+  val message: String =
     "Бот работает как англо-русский словарь.\n" +
       "Просто напишите ему слово и он сделает всё возможное чтобы найти словарную статью.\n" +
       "Не является полноценным переводчиком, вы не можете переводить с его помощью целые предложения.\n" +

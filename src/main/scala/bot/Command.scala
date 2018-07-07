@@ -7,6 +7,7 @@ sealed trait Command
 final case class Help(chatId: ChatId) extends Command
 final case class Start(chatId: ChatId) extends Command
 final case class Statistics(chatId: ChatId) extends Command
+final case class Oxford(chatId: ChatId, word: String) extends Command
 case object Unknown extends Command
 
 
@@ -19,8 +20,9 @@ object Command {
   val helpParser: UpdateParser[Help] = simpleCommandParser("/help", Help)
   val startParser: UpdateParser[Start] = simpleCommandParser("/start", Start)
   val statisticsParser: UpdateParser[Statistics] = simpleCommandParser("/stat", Statistics)
+  val oxfordParser: UpdateParser[Oxford] = requiredTextCommandParser("/ox", Oxford)
 
-  val parsers = Seq(helpParser, startParser, statisticsParser)
+  val parsers = Seq(helpParser, startParser, statisticsParser, oxfordParser)
 
   def parse(update: Update): Command = {
     parsers.view
@@ -37,13 +39,22 @@ object Command {
         c <- maybeBotCommand(update) if c.command == command
       } yield creator(chatId)
 
+  private def requiredTextCommandParser[C <: Command](command: String, creator: (ChatId, String) => C): UpdateParser[C]  =
+    update =>
+      for {
+        chatId <- maybeChatId(update)
+        c <- maybeBotCommand(update) if c.command == command
+        text <- c.text
+      } yield creator(chatId, text)
+
   private def maybeChatId(update: Update): Option[ChatId] = update.message.map(_.chat.id).map(ChatId)
 
   private def maybeBotCommand(update: Update): Option[BotCommand] = {
     def fromText(text: String): BotCommand = {
       val spaceIndex = text.indexOf(' ')
       val splitIndex = if (spaceIndex == -1) text.length else spaceIndex
-      val (command, argument) = text.splitAt(splitIndex)
+      val (command, argumentRaw) = text.splitAt(splitIndex)
+      val argument = argumentRaw.trim
 
       BotCommand(
         command,
