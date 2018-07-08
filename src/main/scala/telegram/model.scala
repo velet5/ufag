@@ -41,10 +41,10 @@ case class TelegramSendMessage(chatId: Long,
                        replyToMessageId: Option[Long] = None)
 
 @JsonNaming(classOf[SnakeCaseStrategy])
-case class ForwardMessage(chatId: Long,
-                          fromChatId: Long,
-                          messageId: Long,
-                          disableNotification: Boolean = true)
+case class TelegramForwardMessage(chatId: Long,
+                                  fromChatId: Long,
+                                  messageId: Long,
+                                  disableNotification: Boolean = true)
 
 @JsonNaming(classOf[SnakeCaseStrategy])
 @JsonIgnoreProperties(ignoreUnknown = true)

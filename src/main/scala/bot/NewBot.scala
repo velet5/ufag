@@ -1,6 +1,6 @@
 package bot
 
-import bot.handler.{HelpHandler, OxfordHandler, StartHandler, StatisticsHandler}
+import bot.handler._
 import http.Client
 import persistence.{Db, Memory}
 import telegram.Update
@@ -19,6 +19,7 @@ object NewBot {
   private val startHandler = new StartHandler
   private val statisticsHandler = new StatisticsHandler(memory)
   private val oxfordHandler = new OxfordHandler(ox)
+  private val askHandler = new AskHandler
 
 }
 
@@ -39,6 +40,7 @@ class NewBot {
       case start: Start => startHandler.handle(start)
       case statictics: Statistics => statisticsHandler.handle(statictics)
       case oxford: Oxford => oxfordHandler.handle(oxford)
+      case ask: Ask => askHandler.handle(ask)
       case _ => Future.successful(CannotHandle)
     }
   }

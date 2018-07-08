@@ -8,6 +8,7 @@ final case class Help(chatId: ChatId) extends Command
 final case class Start(chatId: ChatId) extends Command
 final case class Statistics(chatId: ChatId) extends Command
 final case class Oxford(chatId: ChatId, word: String) extends Command
+final case class Ask(chatId: ChatId, messageId: Long) extends Command
 case object Unknown extends Command
 
 
@@ -21,8 +22,9 @@ object Command {
   val startParser: UpdateParser[Start] = simpleCommandParser("/start", Start)
   val statisticsParser: UpdateParser[Statistics] = simpleCommandParser("/stat", Statistics)
   val oxfordParser: UpdateParser[Oxford] = requiredTextCommandParser("/ox", Oxford)
+  val askParser: UpdateParser[Ask] = withMessageId("/ask", Ask)
 
-  val parsers = Seq(helpParser, startParser, statisticsParser, oxfordParser)
+  val parsers = Seq(helpParser, startParser, statisticsParser, oxfordParser, askParser)
 
   def parse(update: Update): Command = {
     parsers.view
@@ -46,6 +48,15 @@ object Command {
         c <- maybeBotCommand(update) if c.command == command
         text <- c.text
       } yield creator(chatId, text)
+
+  private def withMessageId[C <: Command](command: String, creator: (ChatId, Long) => C): UpdateParser[C] =
+    update =>
+      for {
+        chatId <- maybeChatId(update)
+        c <- maybeBotCommand(update) if c.command == command && c.text.nonEmpty
+        message <- update.message
+        messageId = message.messageId
+      } yield creator(chatId, messageId)
 
   private def maybeChatId(update: Update): Option[ChatId] = update.message.map(_.chat.id).map(ChatId)
 

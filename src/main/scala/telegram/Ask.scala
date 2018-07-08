@@ -1,14 +1,20 @@
 package telegram
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import configuration.Configuration
 import org.slf4j.LoggerFactory
 import persistence.Db
 
 import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
-class Ask(telegram: Bot, db: Db) {
+class Ask(telegram: Telegram, db: Db) {
 
   private val log = LoggerFactory.getLogger(getClass)
+
+  private val mapper = new ObjectMapper().registerModule(DefaultScalaModule).setSerializationInclusion(Include.NON_NULL)
 
   private val ownerId = Configuration.properties.ufag.ownerId
 
@@ -24,12 +30,20 @@ class Ask(telegram: Bot, db: Db) {
   def process(message: Message): Future[Unit] = Future {
     message.text.foreach { text =>
       if (text.length > 5) {
-        val forwardingResponse = ForwardMessage(
+        val forwardingResponse = TelegramForwardMessage(
           ownerId,
           message.chat.id,
           message.messageId)
 
-        telegram.forwardMessage(forwardingResponse) 
+        telegram.forwardMessage(forwardingResponse) onComplete {
+          case Success(tr) =>
+            if (tr.ok) {
+              db.saveAsking(message.chat.id, message.messageId, tr.result.messageId)
+            }
+
+          case Failure(ex) =>
+            log.error(s"Can't forward $forwardingResponse", ex)
+        }
       } else {
         val response = TelegramSendMessage(message.chat.id, "Напишите ваше сообщение после `/ask `.")
         telegram.sendMessage(response) onComplete (_.failed.foreach(log.error("Can't send", _)))
