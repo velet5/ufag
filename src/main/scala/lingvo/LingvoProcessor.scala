@@ -7,9 +7,7 @@ import org.slf4j.LoggerFactory
 
 import scala.util.Try
 
-
 object LingvoProcessor {
-
   private val mapper =
     new ObjectMapper()
       .registerModule(DefaultScalaModule)
@@ -17,9 +15,7 @@ object LingvoProcessor {
 
   private val romanTen = Vector("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X")
   private val romans: Vector[String] = romanTen ++ romanTen.map("X" + _) ++ romanTen.map("XX" + _)
-  
 }
-
 
 class LingvoProcessor {
 
@@ -65,11 +61,9 @@ class LingvoProcessor {
     sb.toString()
   }
 
-
   def processAlt(model: ArticleModel): Part = {
     PartList(model.body.map(processAlt), 0)
   }
-
 
   private def processNode(node: ArticleNode)(implicit sb: StringBuilder): Unit = {
     if (node.isOptional) return

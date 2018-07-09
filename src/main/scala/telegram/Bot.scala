@@ -9,6 +9,7 @@ import lingvo.Lingvo
 import org.slf4j.LoggerFactory
 import persistence.{Db, Memory}
 
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 class Bot {
@@ -22,7 +23,6 @@ class Bot {
   private val lingvo = new Lingvo(client, db)
   private val memory = new Memory(db)
   private val telegram = new Telegram(client)
-  private val ask = new Ask(telegram, db)
 
   private val mapper = new ObjectMapper().registerModule(DefaultScalaModule).setSerializationInclusion(Include.NON_NULL)
 
@@ -35,32 +35,19 @@ class Bot {
   }
 
   def process(update: Update): Unit = {
-    newBot.process(update).map {
-      case CannotHandle => process0(update)
-      case SendMessage(chatId, text) => telegram.sendMessage(TelegramSendMessage(chatId.value, text))
-      case ForwardMessage(senderChatId, receiverChatId, messageId) =>
-        telegram.forwardMessage(TelegramForwardMessage(senderChatId.value, receiverChatId.value, messageId))
-      case Ignore => log.info("Ignoring update")
-    }
+    newBot
+      .process(update)
+      .map {
+        case CannotHandle => process0(update)
+        case SendMessage(chatId, text) => telegram.sendMessage(TelegramSendMessage(chatId.value, text))
+        case ForwardMessage(senderChatId, receiverChatId, messageId) =>
+          telegram.forwardMessage(TelegramForwardMessage(senderChatId.value, receiverChatId.value, messageId))
+        case Ignore => log.info("Ignoring update")
+      }
+      .recover { case NonFatal(ex) => log.error("While processing update", ex) }
   }
 
   def process0(update: Update): Unit = {
-    if (ask.isAsk(update)) {
-      log.info("Asking detected")
-      for {
-        message <- update.message
-        reply <- message.replyToMessage
-        from <- reply.forwardFrom
-        text <- message.text
-      } {
-        val eventualOption = db.getAsking(from.id, reply.messageId)
-        eventualOption.foreach(_.foreach {asking =>
-          telegram.sendMessage(TelegramSendMessage(from.id, text, replyToMessageId = Some(asking.originalMessageId)))
-        })
-      }
-      return 
-    }
-
     for {
       message <- update.message
       messageText <- message.text
@@ -71,12 +58,7 @@ class Bot {
 
       if (entities.exists(_.exists(_.`type` == "bot_command"))) {
         log.info(s"Got command $text")
-
-        if (text == "/ask" || text.startsWith("/ask ")) {
-          ask.process(message)
-        } else {
-          telegram.sendMessage(TelegramSendMessage(chatId, text = s"Неизвестная команда $text"))
-        }
+        telegram.sendMessage(TelegramSendMessage(chatId, text = s"Неизвестная команда $text"))
       } else {
         lingvo
           .translate(text)
@@ -114,9 +96,9 @@ class Bot {
 
     eventualResponse onComplete {
       case Success(response) =>
-          if (remember) {
-            memory.remember(chatId, searchText, messageId.getOrElse(response.result.messageId))
-          }
+        if (remember) {
+          memory.remember(chatId, searchText, messageId.getOrElse(response.result.messageId))
+        }
 
       case Failure(ex) => log.error(s"Can't perform request $value", ex)
     }
