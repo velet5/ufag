@@ -7,6 +7,7 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import http.Client
 import org.slf4j.LoggerFactory
 
+import scala.util.Try
 import scala.util.control.NonFatal
 
 class UpdateHandler {
@@ -24,11 +25,15 @@ class UpdateHandler {
 
   def process(json: String): Unit = {
     log.info(s"Processing $json")
-    val update = mapper.readValue(json, classOf[Update])
-    process(update)
+    val update = Try(mapper.readValue(json, classOf[Update]))
+    
+    update
+      .map(process)
+      .failed
+      .foreach(log.error("Cannot parse update", _))
   }
 
-  def process(update: Update): Unit = {
+  private def process(update: Update): Unit = {
     newBot
       .process(update)
       .map {
