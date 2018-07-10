@@ -56,7 +56,7 @@ class Memory(db: Db) {
 
   private val log = LoggerFactory.getLogger(getClass)
 
-  def remember(chatId: Long, text: String, messageId: Long): Unit = {
+  def remember(chatId: Long, text: String, messageId: Long): Future[Unit] = {
     db.rememberQuery(chatId, text, ZonedDateTime.now(), messageId)
   }
 

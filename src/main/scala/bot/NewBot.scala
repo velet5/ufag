@@ -7,7 +7,6 @@ import telegram.{Telegram, Update}
 
 import scala.concurrent.Future
 
-
 object NewBot {
 
   private val client = new Client
@@ -15,6 +14,7 @@ object NewBot {
   private val memory = new Memory(db)
   private val ox = new oxford.Oxford(db, client)
   private val telegram = new Telegram(client)
+  private val li = new lingvo.Lingvo(client, db)
 
   private val helpHandler = new HelpHandler
   private val startHandler = new StartHandler
@@ -22,9 +22,9 @@ object NewBot {
   private val oxfordHandler = new OxfordHandler(ox)
   private val askHandler = new AskHandler(telegram, db)
   private val askReplyHandler = new AskReplyHandler(db, telegram)
+  private val lingvoHandler = new LingvoHandler(db, memory, telegram, li)
 
 }
-
 
 class NewBot {
   import NewBot._
@@ -44,6 +44,7 @@ class NewBot {
       case oxford: Oxford => oxfordHandler.handle(oxford)
       case ask: Ask => askHandler.handle(ask)
       case askReply: AskReply => askReplyHandler.handle(askReply)
+      case lingvo: Lingvo => lingvoHandler.handle(lingvo)
       case _ => Future.successful(CannotHandle)
     }
   }

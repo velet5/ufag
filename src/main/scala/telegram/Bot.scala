@@ -5,12 +5,9 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import http.Client
-import lingvo.Lingvo
 import org.slf4j.LoggerFactory
-import persistence.{Db, Memory}
 
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success}
 
 class Bot {
 
@@ -19,9 +16,6 @@ class Bot {
   private val log = LoggerFactory.getLogger(getClass)
 
   private val client = new Client
-  private val db = new Db
-  private val lingvo = new Lingvo(client, db)
-  private val memory = new Memory(db)
   private val telegram = new Telegram(client)
 
   private val mapper = new ObjectMapper().registerModule(DefaultScalaModule).setSerializationInclusion(Include.NON_NULL)
@@ -60,47 +54,8 @@ class Bot {
         log.info(s"Got command $text")
         telegram.sendMessage(TelegramSendMessage(chatId, text = s"Неизвестная команда $text"))
       } else {
-        lingvo
-          .translate(text)
-          .map { value =>
-            memory
-              .recall(chatId, text)
-              .map {
-                case None =>
-                  process(TelegramSendMessage(chatId, value), chatId, text, remember = true)
-
-                case Some(occurance) =>
-                  process(
-                    TelegramSendMessage(chatId, memory.fag(occurance), replyToMessageId = Some(occurance.messageId)),
-                    chatId,
-                    text,
-                    remember = true,
-                    messageId = Some(occurance.messageId))
-              }
-          }
-          .recover {
-            case ex =>
-              log.error("Translation error", ex)
-              process(TelegramSendMessage(chatId, ex.getMessage), chatId, text)
-          }
+        
       }
-    }
-  }
-
-  private def process(value: TelegramSendMessage,
-                      chatId: Long,
-                      searchText: String,
-                      remember: Boolean = false,
-                      messageId: Option[Long] = None): Unit = {
-    val eventualResponse = telegram.sendMessage(value)
-
-    eventualResponse onComplete {
-      case Success(response) =>
-        if (remember) {
-          memory.remember(chatId, searchText, messageId.getOrElse(response.result.messageId))
-        }
-
-      case Failure(ex) => log.error(s"Can't perform request $value", ex)
     }
   }
   
