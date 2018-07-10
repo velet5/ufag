@@ -5,7 +5,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
 import org.slf4j.LoggerFactory
-import telegram.Bot
+import telegram.UpdateHandler
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -18,7 +18,7 @@ class Server(port: Int) extends Directives {
   private implicit val materializer: ActorMaterializer = ActorMaterializer()
   private implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
-  val telegram = new Bot
+  val telegram = new UpdateHandler
 
   private val route: Route =
     path("ufag") {

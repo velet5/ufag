@@ -1,6 +1,6 @@
 package bot.parser
 
-import bot.{AskReply, UpdateParser}
+import bot.{AskReply, Malformed, UpdateParser}
 import configuration.Configuration
 import telegram.Update
 
@@ -11,11 +11,11 @@ private object AskReplyParser {
 class AskReplyParser extends UpdateParser[AskReply] {
   import AskReplyParser._
 
-  override def parse(update: Update): Option[AskReply] =
+  override def parse(update: Update): Option[Either[Malformed, AskReply]] =
     for {
       message <- update.message if message.chat.id == ownerId
       reply <- message.replyToMessage
       user <- reply.forwardFrom
       text <- message.text
-    } yield AskReply(user.id, reply.messageId, text)
+    } yield Right(AskReply(user.id, reply.messageId, text))
 }

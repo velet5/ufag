@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 
 import scala.util.control.NonFatal
 
-class Bot {
+class UpdateHandler {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -32,31 +32,13 @@ class Bot {
     newBot
       .process(update)
       .map {
-        case CannotHandle => process0(update)
         case SendMessage(chatId, text) => telegram.sendMessage(TelegramSendMessage(chatId.value, text))
         case ForwardMessage(senderChatId, receiverChatId, messageId) =>
           telegram.forwardMessage(TelegramForwardMessage(senderChatId.value, receiverChatId.value, messageId))
         case Ignore => log.info("Ignoring update")
+        case CannotHandle => log.info("Cannot handle update", update)
       }
       .recover { case NonFatal(ex) => log.error("While processing update", ex) }
-  }
-
-  def process0(update: Update): Unit = {
-    for {
-      message <- update.message
-      messageText <- message.text
-      text = messageText.toLowerCase
-    } {
-      val chatId = message.chat.id
-      val entities = message.entities
-
-      if (entities.exists(_.exists(_.`type` == "bot_command"))) {
-        log.info(s"Got command $text")
-        telegram.sendMessage(TelegramSendMessage(chatId, text = s"Неизвестная команда $text"))
-      } else {
-        
-      }
-    }
   }
   
 }

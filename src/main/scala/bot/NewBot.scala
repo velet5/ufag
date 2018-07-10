@@ -45,7 +45,9 @@ class NewBot {
       case ask: Ask => askHandler.handle(ask)
       case askReply: AskReply => askReplyHandler.handle(askReply)
       case lingvo: Lingvo => lingvoHandler.handle(lingvo)
-      case _ => Future.successful(CannotHandle)
+      case malformed: Malformed => Future.successful(SendMessage(malformed.chatId, malformed.text))
+      case Unknown(chatId) => Future.successful(SendMessage(chatId, "Неизвестная команда"))
+      case CannotParse => Future.successful(CannotHandle)
     }
   }
 }

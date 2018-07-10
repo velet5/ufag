@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.slf4j.LoggerFactory
-import oxford.model.OxfordResponse
 
 import scala.util.Try
 

@@ -12,11 +12,13 @@ final case class Oxford(chatId: ChatId, word: String) extends Command
 final case class Lingvo(chatId: ChatId, word: String) extends Command
 final case class Ask(chatId: ChatId, messageId: Long) extends Command
 final case class AskReply(userId: Long, replyMessageId: Long, text: String) extends Command
-case object Unknown extends Command
+final case class Malformed(chatId: ChatId, text: String) extends Command
+final case class Unknown(chatId: ChatId) extends Command
+case object CannotParse extends Command
 
 
 trait UpdateParser[C <: Command] {
-  def parse(update: Update): Option[C]
+  def parse(update: Update): Option[Either[Malformed, C]]
 }
 
 object Command {
@@ -34,11 +36,17 @@ object Command {
   val parsers = Seq(
     helpParser, startParser, statisticsParser, oxfordParser, askParser, askReplyParser, lingvoParser)
 
-  def parse(update: Update): Command =
-    parsers.view
-      .flatMap(_.parse(update))
-      .headOption
-      .getOrElse(Unknown)
+  def parse(update: Update): Command = {
+    val option: Option[Either[Malformed, Command]] = parsers.view.flatMap(_.parse(update)).headOption
+
+    option
+      .map(_.fold(identity, identity))
+      .orElse(unknown(update))
+      .getOrElse(CannotParse)
+  }
+
+  def unknown(update: Update): Option[Unknown] =
+    maybeChatId(update).map(Unknown)
 
   private def defaultParser[C <: Command](creator: (ChatId, String) => C): UpdateParser[C] =
     update =>
@@ -46,31 +54,36 @@ object Command {
         message <- update.message
         text <- message.text if !text.startsWith("/")
         chatId <- maybeChatId(update)
-      } yield creator(chatId, text)
+      } yield Right(creator(chatId, text))
 
   private def simpleCommandParser[C <: Command](command: String, creator: ChatId => C): UpdateParser[C] =
     update =>
       for {
         chatId <- maybeChatId(update)
         c <- maybeBotCommand(update) if c.command == command
-      } yield creator(chatId)
+      } yield Right(creator(chatId))
 
   private def requiredTextCommandParser[C <: Command](command: String, creator: (ChatId, String) => C): UpdateParser[C]  =
     update =>
       for {
         chatId <- maybeChatId(update)
         c <- maybeBotCommand(update) if c.command == command
-        text <- c.text
-      } yield creator(chatId, text)
+      } yield c.text match {
+        case Some(text) => Right(creator(chatId, text))
+        case None => Left(Malformed(chatId, s"Команда `$command` требует дополнительный текст, напишите что нибудь после `$command`"))
+      }
 
   private def withMessageId[C <: Command](command: String, creator: (ChatId, Long) => C): UpdateParser[C] =
     update =>
       for {
         chatId <- maybeChatId(update)
-        c <- maybeBotCommand(update) if c.command == command && c.text.nonEmpty
+        c <- maybeBotCommand(update) if c.command == command
         message <- update.message
         messageId = message.messageId
-      } yield creator(chatId, messageId)
+      } yield c.text match {
+        case Some(_) => Right(creator(chatId, messageId))
+        case None => Left(Malformed(chatId, s"Команда `$command` требует дополнительный текст, напишите что нибудь после `$command`"))
+      }
 
   private def maybeChatId(update: Update): Option[ChatId] = update.message.map(_.chat.id).map(ChatId)
 

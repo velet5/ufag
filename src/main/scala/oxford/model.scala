@@ -1,4 +1,4 @@
-package oxford.model
+package oxford
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 
