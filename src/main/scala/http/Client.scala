@@ -50,14 +50,11 @@ class Client {
     execute(request)
   }
 
-
-  def post(uri: String, headers: Header*): Future[Response] = {
+  def post(uri: String, headers: Header*): Future[Response] =
     post0(uri, None, headers.toSeq)
-  }
 
-  def post(uri: String, body: String, headers: Header*): Future[Response] = {
+  def post(uri: String, body: String, headers: Header*): Future[Response] =
     post0(uri, Some(body), headers.toSeq)
-  }
 
 
   // ------------------------------- Private -------------------------------

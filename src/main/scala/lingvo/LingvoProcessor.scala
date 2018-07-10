@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.slf4j.LoggerFactory
+import util.RomanNumbers
 
 import scala.util.Try
 
@@ -13,22 +14,24 @@ object LingvoProcessor {
       .registerModule(DefaultScalaModule)
       .setSerializationInclusion(Include.NON_NULL)
 
-  private val romanTen = Vector("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X")
-  private val romans: Vector[String] = romanTen ++ romanTen.map("X" + _) ++ romanTen.map("XX" + _)
-
   /** Part of the article */
   sealed trait Part
 
   /** Abbreviation */
   final case class Abbreviation(value: String) extends Part
+
   /** List of the parts */
   final case class PartList(list: Seq[Part], tpe: Int) extends Part
+
   /** Paragraph of an article */
   final case class Paragraph(value: String) extends Part
+
   /** Single item in some list */
   final case class ListItem(parts: Seq[Part]) extends Part
+
   /** Comment */
   final case class Comment(value: String) extends Part
+  
   /** When we want to skip a part of article completely */
   case object Empty extends Part
 }
@@ -172,7 +175,7 @@ class LingvoProcessor {
             appendLine(value)
           
         case ListItem(parts) =>
-          if (tpe.headOption.contains(1)) appendLine("*" + romans(index) + "*. ")
+          if (tpe.headOption.contains(1)) appendLine("*" + RomanNumbers(index + 1) + "*. ")
           if (tpe.headOption.contains(2)) append("*" + (index + 1) + ".* ")
           if (tpe.headOption.contains(3)) append ((index + 1) + ") ")
           if (tpe.headOption.contains(4)) append ("• ")

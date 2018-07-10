@@ -7,6 +7,7 @@ import configuration.Configuration
 import http.Client
 import http.Client.Response
 import org.apache.http.message.BasicHeader
+import org.slf4j.LoggerFactory
 import persistence.Db
 import persistence.Db.Provider
 
@@ -18,6 +19,11 @@ object Oxford {
 
   private val applicationId = Configuration.properties.oxford.appId
   private val key = Configuration.properties.oxford.apiKey
+
+  sealed trait Fetched
+  final case class FromDb(value: String) extends Fetched
+  final case class FromOx(option: Option[String]) extends Fetched
+
 }
 
 
@@ -31,7 +37,8 @@ class Oxford(db: Db, client: Client) {
   def define(rawText: String): Future[String] = {
     val appIdHeader = new BasicHeader("app_id", applicationId)
     val appKeyHeader = new BasicHeader("app_key", key)
-    val text = URLEncoder.encode(rawText, StandardCharsets.UTF_8.name()).replace("\\+", "%20")
+    val str = URLEncoder.encode(rawText.toLowerCase, StandardCharsets.UTF_8.name())
+    val text = str.replace("+", "%20")
     val uri = url + entriesApi + text
 
     db
@@ -50,16 +57,9 @@ class Oxford(db: Db, client: Client) {
         case FromOx(None) =>
           "Processing error"
       }
-
   }
 
-  private def processResponse(response: Response): Option[String] = {
+  private def processResponse(response: Response): Option[String] =
     response.body.filter(_ => response.status == 200)
-  }
-
-  sealed trait Fetched
-  case class FromDb(value: String) extends Fetched
-  case class FromOx(option: Option[String]) extends Fetched
-
 
 }
