@@ -15,6 +15,22 @@ object LingvoProcessor {
 
   private val romanTen = Vector("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X")
   private val romans: Vector[String] = romanTen ++ romanTen.map("X" + _) ++ romanTen.map("XX" + _)
+
+  /** Part of the article */
+  sealed trait Part
+
+  /** Abbreviation */
+  final case class Abbreviation(value: String) extends Part
+  /** List of the parts */
+  final case class PartList(list: Seq[Part], tpe: Int) extends Part
+  /** Paragraph of an article */
+  final case class Paragraph(value: String) extends Part
+  /** Single item in some list */
+  final case class ListItem(parts: Seq[Part]) extends Part
+  /** Comment */
+  final case class Comment(value: String) extends Part
+  /** When we want to skip a part of article completely */
+  case object Empty extends Part
 }
 
 class LingvoProcessor {
@@ -32,7 +48,7 @@ class LingvoProcessor {
         val tried: Try[Seq[ArticleModel]] =
           Try(mapper.readValue[Array[ArticleModel]](json, classOf[Array[ArticleModel]]))
         tried.failed.foreach(log.error("Error parsing lingvo json", _))
-        tried.map(process).toOption.toRight(error)
+        tried.map(processArticle).toOption.toRight(error)
       } else if (json.contains("No translations found")) {
         Left(emptyResult)
       } else {
@@ -40,10 +56,10 @@ class LingvoProcessor {
       }
   }
 
-  def process(articleModels: Seq[ArticleModel]): String = {
-    val alt: Option[Part] = articleModels.headOption.map(processAlt)
-    val maybeBody = alt.map(printPart)
-    val maybeTitle = articleModels.headOption.map("*" + _.title + "*\n")
+  private def processArticle(articleModels: Seq[ArticleModel]): String = {
+    val maybeFirstModel = articleModels.headOption
+    val maybeTitle = maybeFirstModel.map("*" + _.title + "*\n")
+    val maybeBody = maybeFirstModel.map(convertModel).map(printPart)
 
     val result = for {
       title <- maybeTitle
@@ -53,26 +69,43 @@ class LingvoProcessor {
     result.getOrElse(emptyResult)
   }
 
-  def processString(model: ArticleModel): String = {
-    implicit val sb: StringBuilder = new StringBuilder
+  private def convertModel(model: ArticleModel): Part =
+    PartList(list = model.body.map(convertNode), tpe = 0)
 
-    model.body.foreach(processNode)
+  private def convertNode(node: ArticleNode): Part =
+    node.node match {
+      case _ if node.isOptional =>
+        Empty
+        
+      case NodeType.Paragraph =>
+        val sb = new StringBuilder
+        collectText(node.markup)(sb)
+        Paragraph(sb.toString())
 
-    sb.toString()
-  }
+      case NodeType.List =>
+        PartList(node.items.map(convertNode), node.`type`)
 
-  def processAlt(model: ArticleModel): Part = {
-    PartList(model.body.map(processAlt), 0)
-  }
+      case NodeType.Abbrev =>
+        Abbreviation(node.text)
 
-  private def processNode(node: ArticleNode)(implicit sb: StringBuilder): Unit = {
+      case NodeType.ListItem =>
+        ListItem(node.markup.map(convertNode))
+
+      case NodeType.Comment =>
+        Comment(node.text)
+
+      case _ =>
+        Empty
+    }
+
+  private def collectText(node: ArticleNode)(implicit sb: StringBuilder): Unit = {
     if (node.isOptional) return
     node.node match {
       case NodeType.Paragraph =>
-        processMarkup(node.markup)
+        collectText(node.markup)
 
       case NodeType.List =>
-        node.items.foreach(processNode)
+        node.items.foreach(collectText)
 
       case NodeType.Abbrev =>
         sb append "_" append node.text append "_ "
@@ -81,7 +114,7 @@ class LingvoProcessor {
         if (node.node == NodeType.CardRef) sb.append("*")
         if (node.isItalics) {
           if (node.text.endsWith(" ")) {
-            sb append "_" append node.text.substring(0, node.text.length - 1) append "_ "
+            sb append "_" append node.text.trim append "_ "
           } else {
             sb append "_" append node.text append "_"
           }
@@ -98,99 +131,65 @@ class LingvoProcessor {
         sb.append(" ")
 
       case NodeType.Comment =>
-        node.markup.foreach(processNode)
+        node.markup.foreach(collectText)
 
       case _ =>
+        // ignore all others
     }
   }
 
-  sealed trait Part
-
-  case class Abbreviation(value: String) extends Part
-  case object Empty extends Part
-  case class PartList(list: Seq[Part], tpe: Int) extends Part
-  case class Paragraph(value: String) extends Part
-  case class ListItem(parts: Seq[Part]) extends Part
-  case class Comment(value: String) extends Part
-
-  private def printPart(part: Part): String = {
-    val sb = new StringBuilder
-
-    def printPart0(part: Part, tpe: List[Int] = Nil, index: Int = 0): Unit = {
-      def p[A](a: A): Unit = {
-        sb.append(a)
-      }
-      def pln[A](a: A): Unit = {
-        sb.append(a).append("\n")
-      }
-
-      part match {
-        case Abbreviation(value) =>
-          pln(value + " ")
-        case PartList(list, t) =>
-          list.zipWithIndex.foreach {case (p, i) =>
-            printPart0(p, if (t == 0) tpe else t :: tpe, i)
-          }
-        case Paragraph(value) =>
-          if (tpe.headOption.contains(4))
-            p(value)
-          else
-            pln(value)
-        case ListItem(parts) =>
-          if (tpe.headOption.contains(1)) pln("*" + romans(index) + "*. ")
-          if (tpe.headOption.contains(2)) p("*" + (index + 1) + ".* ")
-          if (tpe.headOption.contains(3)) p ((index + 1) + ") ")
-          if (tpe.headOption.contains(4)) p ("• ")
-          parts.foreach(printPart0(_, tpe, if (parts.size > 1) index else 0))
-          if (tpe.headOption.contains(4) || tpe.headOption.contains(1)) sb append "\n"
-
-        case Comment(value) =>
-          sb append "_(" append value append ")_"
-          
-        case Empty =>
-      }
-    }
-
-    printPart0(part)
-
-    sb.toString()
-  }
-
-
-  private def processAlt(node: ArticleNode): Part = {
-    if (node.isOptional) return Empty
-    node.node match {
-      case NodeType.Paragraph =>
-        val sb = new StringBuilder
-        processMarkup(node.markup)(sb)
-        Paragraph(sb.toString())
-
-      case NodeType.List =>
-        PartList(node.items.map(processAlt), node.`type`)
-
-      case NodeType.Abbrev =>
-        Abbreviation(node.text)
-
-      case NodeType.ListItem =>
-        ListItem(node.markup.map(processAlt))
-
-      case NodeType.Comment =>
-        Comment(node.text)
-
-      case _ =>
-        Empty
-    }
-  }
-
-  private def processMarkup(nodes: Seq[ArticleNode])(implicit sb: StringBuilder): Unit = {
+  private def collectText(nodes: Seq[ArticleNode])(implicit sb: StringBuilder): Unit = {
     val maybeTranscription = nodes.find(_.node == NodeType.Transcription)
 
     maybeTranscription match {
       case Some(transcription) =>
         sb append "\\[" append transcription.text append "]"
       case None =>
-        nodes.foreach(processNode)
+        nodes.foreach(collectText)
     }
+  }
+
+  private def printPart(part: Part): String = {
+    val sb = new StringBuilder
+
+    def go(part: Part, tpe: List[Int] = Nil, index: Int = 0): Unit = {
+      def append[A](a: A): Unit = sb.append(a)
+      def appendLine[A](a: A): Unit = sb.append(a).append("\n")
+
+      part match {
+        case Abbreviation(value) =>
+          appendLine(value + " ")
+
+        case PartList(list, t) =>
+          list.zipWithIndex.foreach {case (p, i) =>
+            go(p, if (t == 0) tpe else t :: tpe, i)
+          }
+
+        case Paragraph(value) =>
+          if (tpe.headOption.contains(4))
+            append(value)
+          else
+            appendLine(value)
+          
+        case ListItem(parts) =>
+          if (tpe.headOption.contains(1)) appendLine("*" + romans(index) + "*. ")
+          if (tpe.headOption.contains(2)) append("*" + (index + 1) + ".* ")
+          if (tpe.headOption.contains(3)) append ((index + 1) + ") ")
+          if (tpe.headOption.contains(4)) append ("• ")
+          parts.foreach(go(_, tpe, if (parts.size > 1) index else 0))
+          if (tpe.headOption.contains(4) || tpe.headOption.contains(1)) sb append "\n"
+
+        case Comment(value) =>
+          sb append "_(" append value append ")_"
+          
+        case Empty =>
+          //ignore
+      }
+    }
+
+    go(part)
+
+    sb.toString()
   }
 
 }
