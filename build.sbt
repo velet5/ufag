@@ -13,5 +13,6 @@ libraryDependencies ++= Seq(
   "org.scalikejdbc" %% "scalikejdbc"       % "3.2.2",
   "org.postgresql" % "postgresql" % "42.2.2",
   "ch.qos.logback"  %  "logback-classic"   % "1.2.3",
-  "com.github.pureconfig" %% "pureconfig" % "0.9.1"
+  "com.github.pureconfig" %% "pureconfig" % "0.9.1",
+  "org.apache.commons" % "commons-text" % "1.4"
 )

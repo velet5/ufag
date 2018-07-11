@@ -34,6 +34,12 @@ object LingvoProcessor {
   
   /** When we want to skip a part of article completely */
   case object Empty extends Part
+
+
+  sealed trait ProcessorError
+  case object EmptyResult extends ProcessorError
+  case object ServiceError extends ProcessorError
+  case object UnknownResponse extends ProcessorError
 }
 
 class LingvoProcessor {
@@ -46,16 +52,16 @@ class LingvoProcessor {
   private val error = "*Ошибка работы сервиса*"
   private val unknown = "*Неизвестный ответ сервиса переводов*"
 
-  def process(json: String): Either[String, String] = {
+  def process(json: String): Either[ProcessorError, String] = {
       if (json.startsWith("[")) {
         val tried: Try[Seq[ArticleModel]] =
           Try(mapper.readValue[Array[ArticleModel]](json, classOf[Array[ArticleModel]]))
         tried.failed.foreach(log.error("Error parsing lingvo json", _))
-        tried.map(processArticle).toOption.toRight(error)
+        tried.map(processArticle).toOption.toRight(ServiceError)
       } else if (json.contains("No translations found")) {
-        Left(emptyResult)
+        Left(EmptyResult)
       } else {
-        Left(unknown)
+        Left(UnknownResponse)
       }
   }
 
