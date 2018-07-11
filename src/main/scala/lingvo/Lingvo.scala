@@ -81,7 +81,7 @@ class Lingvo(client: Client, db: Db) {
     }
   }
 
-  def translate(text: String): Future[String] = {
+  def translate(text: String): Future[Either[String, String]] = {
     def innerTranslate(): Future[String] = auth()
       .flatMap(fetchTranslation(_, text))
       .flatMap {
@@ -103,28 +103,28 @@ class Lingvo(client: Client, db: Db) {
         processor.process(string) match {
           case Right(markdown) =>
             db.saveArticle(text, string, Provider.Lingvo)
-            Future.successful(markdown)
+            Future.successful(Right(markdown))
 
           case Left(EmptyResult) =>
             auth()
               .flatMap(fetchSuggestions(_, text))
               .map {
                 case Array() | null =>
-                  "*Ничего не найдено*"
+                  Left("*Ничего не найдено*")
                 case array =>
-                  "Возможно вы имели в виду: \n" +
+                  Left("Возможно вы имели в виду: \n" +
                     array
                       .sortBy(WordSimilarity.calculate(text, _))
                       .take(5)
                       .map("*" + _ + "*")
-                      .mkString("\n")
+                      .mkString("\n"))
               }
 
           case Left(UnknownResponse) =>
-            Future.successful("*Неизвестный ответ сервиса переводов*")
+            Future.successful(Left("*Неизвестный ответ сервиса переводов*"))
 
           case Left(ServiceError) =>
-            Future.successful("*Ошибка работы сервиса*")
+            Future.successful(Left("*Ошибка работы сервиса*"))
         }
       }
   }

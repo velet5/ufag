@@ -7,7 +7,13 @@ import telegram.{Telegram, TelegramSendMessage}
 
 import scala.concurrent.Future
 
+private object LingvoHandler {
+  case class Message(message: TelegramSendMessage, remember: Boolean)
+}
+
 class LingvoHandler(db: Db, memory: Memory, telegram: Telegram, li: lingvo.Lingvo) extends CommandHandler[Lingvo] {
+
+  import LingvoHandler._
 
   import scala.concurrent.ExecutionContext.Implicits.global
   private val log = LoggerFactory.getLogger(getClass)
@@ -16,24 +22,26 @@ class LingvoHandler(db: Db, memory: Memory, telegram: Telegram, li: lingvo.Lingv
     val text = command.word
     val chatId = command.chatId.value
 
-    val occuranceToMessage: Option[Occurance] => Future[TelegramSendMessage] = {
+    val occuranceToMessage: Option[Occurance] => Future[Message] = {
       case Some(occurance) =>
         val message = TelegramSendMessage(chatId, memory.fag(occurance), replyToMessageId = Some(occurance.messageId))
-        Future.successful(message)
+        Future.successful(Message(message, remember = true))
 
       case None =>
         li
           .translate(text)
-          .map(TelegramSendMessage(chatId, _))
+          .map(_.fold(
+            l => Message(TelegramSendMessage(chatId, l), remember = false),
+            r => Message(TelegramSendMessage(chatId, r), remember = true)))
     }
 
     val eventualUnit =
       for {
         maybeOccurance <- memory.recall(chatId, text)
         message <- occuranceToMessage(maybeOccurance)
-        response <- telegram.sendMessage(message)
+        response <- telegram.sendMessage(message.message)
         messageId = maybeOccurance.fold(response.result.messageId)(_.messageId)
-        _ <- memory.remember(chatId, text, messageId)
+        _ = if (message.remember) memory.remember(chatId, text, messageId)
       } yield ()
 
     eventualUnit
