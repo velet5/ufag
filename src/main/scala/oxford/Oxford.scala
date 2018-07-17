@@ -55,7 +55,7 @@ class Oxford(db: Db, client: Client) {
           db.saveArticle(rawText, value, Provider.Oxford)
           processor.process(value).fold(identity, identity)
         case FromOx(None) =>
-          "Processing error"
+          "*Not found*"
       }
   }
 
