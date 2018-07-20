@@ -23,6 +23,7 @@ object NewBot {
   private val askHandler = new AskHandler(telegram, db)
   private val askReplyHandler = new AskReplyHandler(db, telegram)
   private val lingvoHandler = new LingvoHandler(db, memory, telegram, li)
+  private val ruDefineHandler = new RuDefineHandler(li)
 
 }
 
@@ -45,6 +46,7 @@ class NewBot {
       case ask: Ask => askHandler.handle(ask)
       case askReply: AskReply => askReplyHandler.handle(askReply)
       case lingvo: Lingvo => lingvoHandler.handle(lingvo)
+      case ruDefine: RuDefine => ruDefineHandler.handle(ruDefine)
       case malformed: Malformed => Future.successful(SendMessage(malformed.chatId, malformed.text))
       case Unknown(chatId) => Future.successful(SendMessage(chatId, "Неизвестная команда"))
       case CannotParse => Future.successful(CannotHandle)
