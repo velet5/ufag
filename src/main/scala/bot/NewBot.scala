@@ -24,6 +24,8 @@ object NewBot {
   private val askReplyHandler = new AskReplyHandler(db, telegram)
   private val lingvoHandler = new LingvoHandler(db, memory, telegram, li)
   private val ruDefineHandler = new RuDefineHandler(li)
+  private val subscribeHandler = new SubscribeHandler(db)
+  private val unsubscribeHandler = new UnsubscribeHandler(db)
 
 }
 
@@ -39,14 +41,16 @@ class NewBot {
 
   def processCommand(command: Command): Future[Outcome] = {
     command match {
+      case lingvo: Lingvo => lingvoHandler.handle(lingvo)
+      case oxford: Oxford => oxfordHandler.handle(oxford)
       case help: Help => helpHandler.handle(help)
+      case ruDefine: RuDefine => ruDefineHandler.handle(ruDefine)
       case start: Start => startHandler.handle(start)
       case statictics: Statistics => statisticsHandler.handle(statictics)
-      case oxford: Oxford => oxfordHandler.handle(oxford)
       case ask: Ask => askHandler.handle(ask)
       case askReply: AskReply => askReplyHandler.handle(askReply)
-      case lingvo: Lingvo => lingvoHandler.handle(lingvo)
-      case ruDefine: RuDefine => ruDefineHandler.handle(ruDefine)
+      case subscribe: Subscribe => subscribeHandler.handle(subscribe)
+      case unsubscribe: Unsubscribe => unsubscribeHandler.handle(unsubscribe)
       case malformed: Malformed => Future.successful(SendMessage(malformed.chatId, malformed.text))
       case Unknown(chatId) => Future.successful(SendMessage(chatId, "Неизвестная команда"))
       case CannotParse => Future.successful(CannotHandle)

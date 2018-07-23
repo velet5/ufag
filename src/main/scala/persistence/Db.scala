@@ -59,6 +59,16 @@ object Db {
     val Oxford: Provider.Value = Value(2)
     val LingvoRu: Provider.Value = Value(3)
   }
+
+  case class Unsubscribed(chatId: Long)
+
+  object Unsubscribed extends SQLSyntaxSupport[Unsubscribed] {
+    override def schemaName: Option[String] = Some("ufag")
+    override def tableName: String = "unsubscribed"
+
+    def apply(rs: WrappedResultSet): Unsubscribed = Unsubscribed(rs.long(1))
+  }
+
 }
 
 class Db {
@@ -172,5 +182,25 @@ class Db {
       }.apply()
     }
   }
+
+  def subscribe(chatId: Long): Future[Unit] =
+    Future {
+      val u = Unsubscribed.syntax("u")
+
+      DB.localTx { implicit session =>
+        withSQL {
+          delete.from(Unsubscribed).where.eq(u.chatId, chatId)
+        }.update().apply()
+      }
+    }
+
+  def unsubscribe(chatId: Long): Future[Unit] =
+    Future {
+      DB.localTx { implicit session =>
+        withSQL {
+          insert.into(Unsubscribed).values(chatId)
+        }.update().apply()
+      }
+    }
 
 }

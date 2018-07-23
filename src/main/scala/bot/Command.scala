@@ -15,6 +15,8 @@ final case class AskReply(userId: Long, replyMessageId: Long, text: String) exte
 final case class RuDefine(chatId: ChatId, word: String) extends Command
 final case class Malformed(chatId: ChatId, text: String) extends Command
 final case class Unknown(chatId: ChatId) extends Command
+final case class Subscribe(chatId: ChatId) extends Command
+final case class Unsubscribe(chatId: ChatId) extends Command
 case object CannotParse extends Command
 
 
@@ -26,17 +28,18 @@ object Command {
 
   private case class BotCommand(command: String, text: Option[String])
 
-  val helpParser: UpdateParser[Help] = simpleCommandParser("/help", Help)
-  val startParser: UpdateParser[Start] = simpleCommandParser("/start", Start)
-  val statisticsParser: UpdateParser[Statistics] = simpleCommandParser("/stat", Statistics)
-  val oxfordParser: UpdateParser[Oxford] = requiredTextCommandParser("/ox", Oxford)
-  val ruDefineParser: UpdateParser[RuDefine] = requiredTextCommandParser("/ru", RuDefine)
-  val askParser: UpdateParser[Ask] = withMessageId("/ask", Ask)
-  val askReplyParser: UpdateParser[AskReply] = new AskReplyParser
-  val lingvoParser: UpdateParser[Lingvo] = defaultParser(Lingvo)
-
-  val parsers = Seq(
-    helpParser, startParser, statisticsParser, oxfordParser, askParser, askReplyParser, lingvoParser, ruDefineParser)
+  val parsers: Seq[UpdateParser[_ <: Command]] = Seq(
+    defaultParser(Lingvo),
+    requiredTextCommandParser("/ox", Oxford),
+    requiredTextCommandParser("/ru", RuDefine),
+    simpleCommandParser("/help", Help),
+    simpleCommandParser("/start", Start),
+    simpleCommandParser("/stat", Statistics),
+    withMessageId("/ask", Ask),
+    new AskReplyParser,
+    simpleCommandParser("/sub", Subscribe),
+    simpleCommandParser("/unsub", Unsubscribe)
+  )
 
   def parse(update: Update): Command = {
     val option: Option[Either[Malformed, Command]] = parsers.view.flatMap(_.parse(update)).headOption
