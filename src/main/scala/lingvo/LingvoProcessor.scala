@@ -161,7 +161,7 @@ class LingvoProcessor {
   private def printPart(part: Part): String = {
     val sb = new StringBuilder
 
-    def go(part: Part, tpe: List[Int] = Nil, index: Int = 0): Unit = {
+    def go(part: Part, tpe: List[Int] = Nil, index: Int = 0, parentIndex: Option[Int] = None): Unit = {
       def append[A](a: A): Unit = sb.append(a)
       def appendLine[A](a: A): Unit = sb.append(a).append("\n")
 
@@ -171,7 +171,7 @@ class LingvoProcessor {
 
         case PartList(list, t) =>
           list.zipWithIndex.foreach {case (p, i) =>
-            go(p, if (t == 0) tpe else t :: tpe, i)
+            go(p, if (t == 0) tpe else t :: tpe, i, Some(index).filter(_ => t > 0))
           }
 
         case Paragraph(value) =>
@@ -183,7 +183,13 @@ class LingvoProcessor {
         case ListItem(parts) =>
           if (tpe.headOption.contains(1)) appendLine("*" + RomanNumbers(index + 1) + "*. ")
           if (tpe.headOption.contains(2)) append("*" + (index + 1) + ".* ")
-          if (tpe.headOption.contains(3)) append ((index + 1) + ") ")
+          if (tpe.headOption.contains(3)) {
+            parentIndex
+              .filter(_ => tpe.length > 1)
+              .foreach(i => append((i + 1) + "."))
+            
+            append ((index + 1) + ") ")
+          }
           if (tpe.headOption.contains(4)) append ("• ")
           parts.foreach(go(_, tpe, if (parts.size > 1) index else 0))
           if (tpe.headOption.contains(4) || tpe.headOption.contains(1)) sb append "\n"
