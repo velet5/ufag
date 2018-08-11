@@ -36,15 +36,11 @@ object Memory {
       (ChronoUnit.MINUTES.between(time, now) % 60, minute),
       (ChronoUnit.SECONDS.between(time, now) % 70, second))
 
-    val notZero: Long => Boolean = _ > 0
-
     since
-      .zip(since.tail)
-      .find { case ((a, _), (b, _)) => notZero(a) && notZero(b) }
-      .map { case (a, b) => Seq(a, b) }
-      .orElse(since.find {case (a, _) => notZero(a)}.map(Seq(_)))
-      .map(_.map { case (number, plural) => plural.format(number)}.mkString(" "))
-      .getOrElse("только что")
+      .filter {case (number, _) => number > 0 }
+      .take(2)
+      .map {case (number, formatter) => formatter.format(number)}
+      .mkString(" ")
   }
 }
 
