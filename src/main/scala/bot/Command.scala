@@ -59,7 +59,7 @@ object Command {
         message <- update.message
         text <- message.text if !text.startsWith("/")
         chatId <- maybeChatId(update)
-      } yield Right(creator(chatId, text))
+      } yield Right(creator(chatId, text.toLowerCase))
 
   private def simpleCommandParser[C <: Command](command: String, creator: ChatId => C): UpdateParser[C] =
     update =>
@@ -74,7 +74,7 @@ object Command {
         chatId <- maybeChatId(update)
         c <- maybeBotCommand(update) if c.command == command
       } yield c.text match {
-        case Some(text) => Right(creator(chatId, text))
+        case Some(text) => Right(creator(chatId, text.toLowerCase))
         case None => Left(Malformed(chatId, s"Команда `$command` требует дополнительный текст, напишите что нибудь после `$command`"))
       }
 
