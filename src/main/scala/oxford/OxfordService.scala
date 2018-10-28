@@ -13,7 +13,7 @@ import persistence.Db.Provider
 
 import scala.concurrent.Future
 
-object Oxford {
+object OxfordService {
   private val url = "https://od-api.oxforddictionaries.com/api/v1"
   private val entriesApi = "/entries/en/"
 
@@ -27,9 +27,9 @@ object Oxford {
 }
 
 
-class Oxford(db: Db, client: Client) {
+class OxfordService(db: Db, client: Client) {
 
-  import Oxford._
+  import OxfordService._
   private val processor = new OxfordProcessor
 
   import scala.concurrent.ExecutionContext.Implicits.global

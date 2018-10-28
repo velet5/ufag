@@ -4,26 +4,20 @@ import bot._
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import http.Client
 import org.slf4j.LoggerFactory
 
 import scala.util.Try
 import scala.util.control.NonFatal
 
-class UpdateHandler {
+trait UpdateHandler {
+  def handle(update: String): Unit
+}
+
+class UpdateHandlerImpl(telegram: Telegram, bot: Bot) extends UpdateHandler {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  private val log = LoggerFactory.getLogger(getClass)
-
-  private val client = new Client
-  private val telegram = new Telegram(client)
-
-  private val mapper = new ObjectMapper().registerModule(DefaultScalaModule).setSerializationInclusion(Include.NON_NULL)
-
-  private val newBot = new NewBot
-
-  def process(json: String): Unit = {
+  def handle(json: String): Unit = {
     log.info(s"Processing $json")
     val update = Try(mapper.readValue(json, classOf[Update]))
     
@@ -33,8 +27,10 @@ class UpdateHandler {
       .foreach(log.error("Cannot parse update", _))
   }
 
+  // under the hood
+
   private def process(update: Update): Unit = {
-    newBot
+    bot
       .process(update)
       .map {
         case SendMessage(chatId, text) => telegram.sendMessage(TelegramSendMessage(chatId.value, text))
@@ -45,5 +41,12 @@ class UpdateHandler {
       }
       .recover { case NonFatal(ex) => log.error("While processing update", ex) }
   }
-  
+
+  private val log = LoggerFactory.getLogger(getClass)
+
+  private val mapper =
+    new ObjectMapper()
+      .registerModule(DefaultScalaModule)
+      .setSerializationInclusion(Include.NON_NULL)
+
 }

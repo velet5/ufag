@@ -4,55 +4,49 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
+import cats.syntax.option.catsSyntaxOptionId
 import org.slf4j.LoggerFactory
 import telegram.UpdateHandler
 
 import scala.concurrent.{ExecutionContext, Future}
 
 
-class Server(port: Int) extends Directives {
+class Server(port: Int, updateHandler: UpdateHandler) extends Directives {
 
-  private val log = LoggerFactory.getLogger(getClass)
+  private var bindingFuture: Option[Future[Http.ServerBinding]] = None
 
   private implicit val system: ActorSystem = ActorSystem("my-system")
   private implicit val materializer: ActorMaterializer = ActorMaterializer()
   private implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
-  val telegram = new UpdateHandler
-
   private val route: Route =
     path("ufag") {
       post {
         entity(as[String]) {text =>
-          log.info("/ufag is reached")
-          telegram.process(text)
+          updateHandler.handle(text)
           complete("")
         }
       }
     }
 
-  def start(): RunningServer = {
-    val bindingFuture: Future[Http.ServerBinding] = Http().bindAndHandle(route, "localhost", port)
-
-    new RunningServer(system, bindingFuture)
+  def start(): Unit = {
+    if (bindingFuture.isEmpty) {
+      bindingFuture = Http().bindAndHandle(route, "localhost", port).some
+    }
   }
-
-}
-
-
-class RunningServer(system: ActorSystem, bindingFuture: Future[Http.ServerBinding]) {
-  private val log = LoggerFactory.getLogger(getClass)
-
-  private implicit val executionContext: ExecutionContext = system.dispatcher
 
   def stop(): Unit = {
-    log.info("Unbiding the future")
-    bindingFuture
-      .flatMap(_.unbind())
-      .onComplete(_ => {
-        log.info("terminating")
-        system.terminate()
-      })
+    bindingFuture.foreach(
+      _.flatMap(_.unbind())
+        .onComplete(_ => {
+          log.info("terminating")
+          system.terminate()
+        })
+    )
   }
+
+  // under the hood
+
+  private val log = LoggerFactory.getLogger(getClass)
 
 }

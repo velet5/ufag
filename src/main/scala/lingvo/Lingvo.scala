@@ -13,6 +13,7 @@ import org.apache.http.HttpHeaders
 import org.apache.http.message.BasicHeader
 import persistence.Db
 import persistence.Db.Provider
+import util.TextUtils.isCyrillic
 import util.WordSimilarity
 
 import scala.concurrent.{Future, Promise}
@@ -30,10 +31,6 @@ class Lingvo(client: Client, db: Db) {
   private val ServiceUrl = "https://developers.lingvolive.com"
 
   private val processor = new LingvoProcessor
-
-  private val cyrillic =
-    "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ" +
-    "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
 
   private val mapper =
     new ObjectMapper()
@@ -194,8 +191,5 @@ class Lingvo(client: Client, db: Db) {
       .map(_.body.flatMap(body => Try(mapper.readValue[Array[String]](body, classOf[Array[String]])).toOption))
       .map(_.getOrElse(Array.empty))
   }
-
-  private def isCyrillic(text: String): Boolean =
-    text.exists(cyrillic.indexOf(_) >= 0)
 
 }

@@ -10,9 +10,10 @@ libraryDependencies ++= Seq(
   "org.apache.httpcomponents" % "httpasyncclient" % "4.1.3",
   "com.fasterxml.jackson.core" % "jackson-core" % "2.9.5",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.5",
-  "org.scalikejdbc" %% "scalikejdbc"       % "3.2.2",
+  "org.scalikejdbc" %% "scalikejdbc" % "3.2.2",
   "org.postgresql" % "postgresql" % "42.2.2",
-  "ch.qos.logback"  %  "logback-classic"   % "1.2.3",
+  "ch.qos.logback" % "logback-classic" % "1.2.3",
   "com.github.pureconfig" %% "pureconfig" % "0.9.1",
-  "org.apache.commons" % "commons-text" % "1.4"
+  "org.apache.commons" % "commons-text" % "1.4",
+  "org.typelevel" %% "cats-core" % "1.4.0"
 )

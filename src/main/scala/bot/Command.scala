@@ -1,7 +1,9 @@
 package bot
 
 import bot.parser.AskReplyParser
+import org.apache.commons.lang3.StringUtils.{removeStart, startsWith}
 import telegram.Update
+import util.TextUtils.isCyrillic
 
 sealed trait Command
 
@@ -29,6 +31,7 @@ object Command {
   private case class BotCommand(command: String, text: Option[String])
 
   val parsers: Seq[UpdateParser[_ <: Command]] = Seq(
+    definitionParser(),
     defaultParser(Lingvo),
     requiredTextCommandParser("/ox", Oxford),
     requiredTextCommandParser("/ru", RuDefine),
@@ -77,6 +80,20 @@ object Command {
         case Some(text) => Right(creator(chatId, text.toLowerCase))
         case None => Left(Malformed(chatId, s"Команда `$command` требует дополнительный текст, напишите что нибудь после `$command`"))
       }
+
+  private def definitionParser(): UpdateParser[Command] = {
+    update =>
+      for {
+        message <- update.message
+        rawText <- message.text if startsWith(rawText, "?")
+        text = removeStart(rawText, "?").trim()
+        chatId <- maybeChatId(update)
+      } yield {
+        if (isCyrillic(text)) Right(RuDefine(chatId, text))
+        else Right(Oxford(chatId, text))
+      }
+
+  }
 
   private def withMessageId[C <: Command](command: String, creator: (ChatId, Long) => C): UpdateParser[C] =
     update =>

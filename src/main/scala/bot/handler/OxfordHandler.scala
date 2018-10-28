@@ -4,7 +4,7 @@ import bot.{Outcome, Oxford, SendMessage}
 
 import scala.concurrent.Future
 
-class OxfordHandler(ox: oxford.Oxford) extends CommandHandler[Oxford] {
+class OxfordHandler(ox: oxford.OxfordService) extends CommandHandler[Oxford] {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
