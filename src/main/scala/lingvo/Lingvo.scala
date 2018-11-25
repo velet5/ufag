@@ -147,7 +147,6 @@ class Lingvo(client: Client, db: Db) {
     rawText: String,
     from: Int,
     to: Int): Future[TranslationResult] = {
-    //GET api/v1/Translation?
     val api = "/api/v1/Translation"
     val text = URLEncoder.encode(rawText, StandardCharsets.UTF_8.name()).replace("+", "%20")
     val query = s"?text=$text&srcLang=$from&dstLang=$to"

@@ -1,3 +1,5 @@
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
 import bot.BotImpl
 import bot.handler._
 import configuration.Configuration
@@ -7,11 +9,17 @@ import oxford.OxfordService
 import persistence.{Db, Memory}
 import telegram.{TelegramImpl, UpdateHandlerImpl}
 
+import scala.concurrent.ExecutionContext
+
 trait Wiring {
 
-  import scala.concurrent.ExecutionContext.Implicits.global
+  implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
+  implicit val actorSystem: ActorSystem = ActorSystem("my-system")
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   private val configuration = Configuration.properties
+
+  val port: Int = configuration.ufag.port
 
   val client = new Client
   val telegram = new TelegramImpl(configuration.telegram.token, client)

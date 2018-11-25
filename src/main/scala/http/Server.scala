@@ -11,13 +11,10 @@ import telegram.UpdateHandler
 import scala.concurrent.{ExecutionContext, Future}
 
 
-class Server(port: Int, updateHandler: UpdateHandler) extends Directives {
-
-  private var bindingFuture: Option[Future[Http.ServerBinding]] = None
-
-  private implicit val system: ActorSystem = ActorSystem("my-system")
-  private implicit val materializer: ActorMaterializer = ActorMaterializer()
-  private implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
+class Server(port: Int, updateHandler: UpdateHandler)
+            (implicit executionContext: ExecutionContext,
+                      actorSystem: ActorSystem,
+                      actorMaterializer: ActorMaterializer) extends Directives {
 
   private val route: Route =
     path("ufag") {
@@ -40,7 +37,6 @@ class Server(port: Int, updateHandler: UpdateHandler) extends Directives {
       _.flatMap(_.unbind())
         .onComplete(_ => {
           log.info("terminating")
-          system.terminate()
         })
     )
   }
@@ -48,5 +44,7 @@ class Server(port: Int, updateHandler: UpdateHandler) extends Directives {
   // under the hood
 
   private val log = LoggerFactory.getLogger(getClass)
+
+  private var bindingFuture: Option[Future[Http.ServerBinding]] = None
 
 }

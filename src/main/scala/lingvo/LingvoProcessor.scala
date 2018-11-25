@@ -9,10 +9,8 @@ import util.RomanNumbers
 import scala.util.Try
 
 object LingvoProcessor {
-  private val mapper =
-    new ObjectMapper()
-      .registerModule(DefaultScalaModule)
-      .setSerializationInclusion(Include.NON_NULL)
+
+  private val emptyResult = "*Ничего не найдено*"
 
   /** Part of the article */
   sealed trait Part
@@ -46,12 +44,6 @@ class LingvoProcessor {
 
   import LingvoProcessor._
 
-  private val log = LoggerFactory.getLogger(getClass)
-
-  private val emptyResult = "*Ничего не найдено*"
-  private val error = "*Ошибка работы сервиса*"
-  private val unknown = "*Неизвестный ответ сервиса переводов*"
-
   def process(json: String): Either[ProcessorError, String] = {
       if (json.startsWith("[")) {
         val tried: Try[Seq[ArticleModel]] =
@@ -64,6 +56,8 @@ class LingvoProcessor {
         Left(UnknownResponse)
       }
   }
+
+  // under the hood
 
   private def processArticle(articleModels: Seq[ArticleModel]): String = {
     val maybeFirstModel = articleModels.headOption
@@ -206,6 +200,12 @@ class LingvoProcessor {
 
     sb.toString()
   }
+
+  private val log = LoggerFactory.getLogger(getClass)
+  private val mapper =
+    new ObjectMapper()
+      .registerModule(DefaultScalaModule)
+      .setSerializationInclusion(Include.NON_NULL)
 
 }
 

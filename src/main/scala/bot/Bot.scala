@@ -10,16 +10,16 @@ trait Bot {
 }
 
 class BotImpl(telegram: Telegram,
-              lingvoHandler: LingvoHandler,
-              oxfordHandler: OxfordHandler,
-              helpHandler: HelpHandler,
-              ruDefineHandler: RuDefineHandler,
-              startHandler: StartHandler,
-              statisticsHandler: StatisticsHandler,
-              askHandler: AskHandler,
-              askReplyHandler: AskReplyHandler,
-              subscribeHandler: SubscribeHandler,
-              unsubscribeHandler: UnsubscribeHandler) extends Bot {
+              lingvoHandler: CommandHandler[Lingvo],
+              oxfordHandler: CommandHandler[Oxford],
+              helpHandler: CommandHandler[Help],
+              ruDefineHandler: CommandHandler[RuDefine],
+              startHandler: CommandHandler[Start],
+              statisticsHandler: CommandHandler[Statistics],
+              askHandler: CommandHandler[Ask],
+              askReplyHandler: CommandHandler[AskReply],
+              subscribeHandler: CommandHandler[Subscribe],
+              unsubscribeHandler: CommandHandler[Unsubscribe]) extends Bot {
 
   def process(update: Update): Future[Outcome] = {
     val command = Command.parse(update)

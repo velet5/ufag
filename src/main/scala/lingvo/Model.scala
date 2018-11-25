@@ -45,25 +45,3 @@ object NodeType {
   val Ref = "Ref"
   val Unsupported = "Unsupported"
 }
-
-//
-//object NodeType {
-//  val Comment = 0
-//  val Paragraph = 1
-//  val Text = 2
-//  val List = 3
-//  val ListItem = 4
-//  val Examples = 5
-//  val ExampleItem = 6
-//  val Example = 7
-//  val CardRefs = 8
-//  val CardRefItem = 9
-//  val CardRef = 10
-//  val Transcription = 11
-//  val Abbrev = 12
-//  val Caption = 13
-//  val Sound = 14
-//  val Ref = 15
-//  val Unsupported = 16
-//}
-

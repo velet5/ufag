@@ -15,6 +15,7 @@ object Application extends Wiring {
       override def run(): Unit = {
         log.info("application is stopping")
         server.stop()
+        actorSystem.terminate()
       }
     })
   }
