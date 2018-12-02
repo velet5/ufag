@@ -2,11 +2,10 @@ package bot.handler
 
 import bot.{Outcome, Oxford, SendMessage}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class OxfordHandler(ox: oxford.OxfordService) extends CommandHandler[Oxford] {
-
-  import scala.concurrent.ExecutionContext.Implicits.global
+class OxfordHandler(ox: oxford.OxfordService)
+                   (implicit ec: ExecutionContext) extends CommandHandler[Oxford] {
 
   override def handle(command: Oxford): Future[Outcome] =
     ox

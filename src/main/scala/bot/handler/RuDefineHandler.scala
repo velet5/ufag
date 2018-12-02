@@ -2,11 +2,10 @@ package bot.handler
 
 import bot.{Outcome, RuDefine, SendMessage}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class RuDefineHandler(li: lingvo.Lingvo) extends CommandHandler[RuDefine] {
-
-  import scala.concurrent.ExecutionContext.Implicits.global
+class RuDefineHandler(li: lingvo.Lingvo)
+                     (implicit ec: ExecutionContext) extends CommandHandler[RuDefine] {
 
   override def handle(command: RuDefine): Future[Outcome] =
     li

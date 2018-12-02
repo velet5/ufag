@@ -1,14 +1,13 @@
 package persistence
 
 import java.time.ZonedDateTime
-import java.util.concurrent.{LinkedBlockingQueue, ThreadPoolExecutor, TimeUnit}
 
 import configuration.Configuration
 import org.slf4j.LoggerFactory
+import persistence.model._
 import scalikejdbc._
 
 import scala.concurrent.{ExecutionContext, Future}
-
 
 object Db {
 
@@ -18,60 +17,10 @@ object Db {
   ConnectionPool.singleton("jdbc:postgresql://localhost:5432/ufag", properties.user, properties.password)
 
   private implicit val session: AutoSession.type = AutoSession
-  implicit val executionContext: ExecutionContext =
-    ExecutionContext.fromExecutor(new ThreadPoolExecutor(4, 8, 1L, TimeUnit.SECONDS, new LinkedBlockingQueue(100)))
-
-  case class Query(chatId: Long, text: String, time: ZonedDateTime, messageId: Long)
-
-  object Query extends scalikejdbc.SQLSyntaxSupport[Query] {
-
-    override def schemaName: Option[String] = Some("ufag")
-    override val tableName = "queries"
-
-    def apply(rs: WrappedResultSet): Query = Query(rs.long(1), rs.string(2), rs.zonedDateTime(3), rs.long(4))
-  }
-
-  case class Article(searchText: String, content: String, provider: Provider.Value)
-
-
-  object Article extends SQLSyntaxSupport[Article] {
-    override def schemaName: Option[String] = Some("ufag")
-    override def tableName: String = "articles"
-
-    def apply(rs: WrappedResultSet): Article = Article(rs.string(1), rs.string(2), Provider(rs.int(3)))
-  }
-
-
-  case class Asking(chatId: Long, originalMessageId: Long, ownerMessageId: Long)
-
-  object Asking extends SQLSyntaxSupport[Asking] {
-    override def schemaName: Option[String] = Some("ufag")
-    override def tableName: String = "asking" // yeah, lame
-
-    def apply(rs: WrappedResultSet): Asking = Asking(rs.long(1), rs.long(2), rs.long(3))
-  }
-
-
-  case class Stat(userCount: Int, queryCount: Int, wordCount: Int)
-
-  object Provider extends Enumeration {
-    val Lingvo: Provider.Value = Value(1)
-    val Oxford: Provider.Value = Value(2)
-    val LingvoRu: Provider.Value = Value(3)
-  }
-
-  case class Unsubscribed(chatId: Long)
-
-  object Unsubscribed extends SQLSyntaxSupport[Unsubscribed] {
-    override def schemaName: Option[String] = Some("ufag")
-    override def tableName: String = "unsubscribed"
-
-    def apply(rs: WrappedResultSet): Unsubscribed = Unsubscribed(rs.long(1))
-  }
 
 }
 
-class Db {
+class Db(implicit ec: ExecutionContext) {
 
   import Db._
 
@@ -106,7 +55,6 @@ class Db {
       }.map(Query(_)).first().apply()
     }
   }
-
 
   def getArticle(text: String, provider: Provider.Value): Future[Option[Article]] = Future {
     val a = Article.syntax("a")

@@ -7,13 +7,17 @@ import configuration.Configuration
 import http.Client
 import http.Client.Response
 import org.apache.http.message.BasicHeader
-import org.slf4j.LoggerFactory
 import persistence.Db
-import persistence.Db.Provider
+import persistence.model.Provider
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-object OxfordService {
+
+trait OxfordService {
+  def define(rawText: String): Future[String]
+}
+
+object OxfordServiceImpl {
   private val url = "https://od-api.oxforddictionaries.com/api/v1"
   private val entriesApi = "/entries/en/"
 
@@ -26,13 +30,10 @@ object OxfordService {
 
 }
 
+class OxfordServiceImpl(db: Db, client: Client, processor: OxfordProcessor)
+                       (implicit ex: ExecutionContext) extends OxfordService {
 
-class OxfordService(db: Db, client: Client) {
-
-  import OxfordService._
-  private val processor = new OxfordProcessor
-
-  import scala.concurrent.ExecutionContext.Implicits.global
+  import OxfordServiceImpl._
 
   def define(rawText: String): Future[String] = {
     val appIdHeader = new BasicHeader("app_id", applicationId)

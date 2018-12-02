@@ -2,6 +2,7 @@ package http
 
 import java.nio.charset.StandardCharsets
 
+import http.Client.Response
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.{HttpGet, HttpPost, HttpUriRequest}
 import org.apache.http.concurrent.FutureCallback
@@ -15,31 +16,35 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.{Future, Promise}
 import scala.io.Source
 
+trait Client {
+  def get(uri: String, headers: Header*): Future[Response]
+  def post(uri: String, headers: Header*): Future[Response]
+  def post(uri: String, body: String, headers: Header*): Future[Response]
+}
 
 object Client {
+  case class Response(status: Int, body: Option[String])
+}
+
+object ClientImpl {
   /** Java complains about Lingvo.com SSL certificate */
   private val sslContext =
-     SSLContextBuilder.create()
-       .loadTrustMaterial(new TrustSelfSignedStrategy())
-       .build()
+    SSLContextBuilder.create()
+      .loadTrustMaterial(new TrustSelfSignedStrategy())
+      .build()
 
   private val config: RequestConfig = RequestConfig.custom().setConnectTimeout(500).build()
   private val client: CloseableHttpAsyncClient =
     HttpAsyncClientBuilder.create()
       .setDefaultRequestConfig(config)
       .setSSLContext(sslContext).build()
-
-  case class Response(status: Int, body: Option[String])
-
-  client.start()
 }
 
+class ClientImpl extends Client {
 
-class Client {
-  
-  import Client._
+  import ClientImpl._
 
-  private val log = LoggerFactory.getLogger(getClass)
+  client.start()
 
   // ------------------------------- Api -------------------------------
 
@@ -90,5 +95,7 @@ class Client {
 
     promise.future
   }
+
+  private val log = LoggerFactory.getLogger(getClass)
 
 }

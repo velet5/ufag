@@ -12,7 +12,7 @@ import lingvo.LingvoProcessor.{EmptyResult, ServiceError, UnknownResponse}
 import org.apache.http.HttpHeaders
 import org.apache.http.message.BasicHeader
 import persistence.Db
-import persistence.Db.Provider
+import persistence.model.Provider
 import util.TextUtils.isCyrillic
 import util.WordSimilarity
 
@@ -120,7 +120,6 @@ class Lingvo(client: Client, db: Db) {
       }
   }
 
-
   private def correct(text: String): Future[Either[String, String]] =
     auth()
       .flatMap(fetchSuggestions(_, text))
@@ -142,11 +141,7 @@ class Lingvo(client: Client, db: Db) {
   def translate(text: String): Future[Either[String, String]] =
      getArticle(text, Provider.Lingvo, fetchTranslation, correct)
 
-  private def fetchArticle(
-    token: String,
-    rawText: String,
-    from: Int,
-    to: Int): Future[TranslationResult] = {
+  private def fetchArticle(token: String, rawText: String, from: Int, to: Int): Future[TranslationResult] = {
     val api = "/api/v1/Translation"
     val text = URLEncoder.encode(rawText, StandardCharsets.UTF_8.name()).replace("+", "%20")
     val query = s"?text=$text&srcLang=$from&dstLang=$to"

@@ -208,4 +208,3 @@ class LingvoProcessor {
       .setSerializationInclusion(Include.NON_NULL)
 
 }
-

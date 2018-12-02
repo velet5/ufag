@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.slf4j.LoggerFactory
 
+import scala.concurrent.ExecutionContext
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -13,9 +14,7 @@ trait UpdateHandler {
   def handle(update: String): Unit
 }
 
-class UpdateHandlerImpl(telegram: Telegram, bot: Bot) extends UpdateHandler {
-
-  import scala.concurrent.ExecutionContext.Implicits.global
+class UpdateHandlerImpl(telegram: Telegram, bot: Bot)(implicit ec: ExecutionContext) extends UpdateHandler {
 
   def handle(json: String): Unit = {
     log.info(s"Processing $json")

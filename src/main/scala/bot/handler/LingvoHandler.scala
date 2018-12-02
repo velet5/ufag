@@ -2,29 +2,30 @@ package bot.handler
 
 import bot.{Ignore, Lingvo, Outcome}
 import org.slf4j.LoggerFactory
-import persistence.{Db, Memory, Occurance}
+import persistence.model.Occurrence
+import persistence.{Db, Memory}
 import telegram.{Telegram, TelegramSendMessage}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 private object LingvoHandler {
   case class Message(message: TelegramSendMessage, remember: Boolean)
 }
 
-class LingvoHandler(db: Db, memory: Memory, telegram: Telegram, li: lingvo.Lingvo) extends CommandHandler[Lingvo] {
+class LingvoHandler(db: Db, memory: Memory, telegram: Telegram, li: lingvo.Lingvo)
+                   (implicit ec: ExecutionContext) extends CommandHandler[Lingvo] {
 
   import LingvoHandler._
 
-  import scala.concurrent.ExecutionContext.Implicits.global
   private val log = LoggerFactory.getLogger(getClass)
 
   override def handle(command: Lingvo): Future[Outcome] = {
     val text = command.word
     val chatId = command.chatId.value
 
-    val occuranceToMessage: Option[Occurance] => Future[Message] = {
-      case Some(occurance) =>
-        val message = TelegramSendMessage(chatId, memory.fag(occurance), replyToMessageId = Some(occurance.messageId))
+    val occurrenceToMessage: Option[Occurrence] => Future[Message] = {
+      case Some(occurrence) =>
+        val message = TelegramSendMessage(chatId, memory.fag(occurrence), replyToMessageId = Some(occurrence.messageId))
         Future.successful(Message(message, remember = true))
 
       case None =>
@@ -38,7 +39,7 @@ class LingvoHandler(db: Db, memory: Memory, telegram: Telegram, li: lingvo.Lingv
     val eventualUnit =
       for {
         maybeOccurance <- memory.recall(chatId, text)
-        message <- occuranceToMessage(maybeOccurance)
+        message <- occurrenceToMessage(maybeOccurance)
         response <- telegram.sendMessage(message.message)
         messageId = maybeOccurance.fold(response.result.messageId)(_.messageId)
         _ = if (message.remember) memory.remember(chatId, text, messageId)

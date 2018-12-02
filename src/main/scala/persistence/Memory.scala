@@ -4,8 +4,9 @@ import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
 import org.slf4j.LoggerFactory
+import persistence.model.{Occurrence, Stat}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
 object Memory {
@@ -44,11 +45,9 @@ object Memory {
   }
 }
 
-class Memory(db: Db) {
+class Memory(db: Db)(implicit ec: ExecutionContext) {
 
   import Memory._
-
-  import scala.concurrent.ExecutionContext.Implicits.global
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -56,24 +55,21 @@ class Memory(db: Db) {
     db.rememberQuery(chatId, text, ZonedDateTime.now(), messageId)
   }
 
-  def recall(chatId: Long, text: String): Future[Option[Occurance]] = {
+  def recall(chatId: Long, text: String): Future[Option[Occurrence]] = {
     db
       .get(chatId, text)
-      .map(_.map(q => Occurance(q.text, q.time, q.messageId)))
+      .map(_.map(q => Occurrence(q.text, q.time, q.messageId)))
       .recover {case ex => log.error("Recall failure", ex); None}
   }
 
-  def fag(occurance: Occurance): String = {
+  def fag(occurance: Occurrence): String = {
     "Похоже что ты пидор, потому что я уже отвечал на этот запрос " + timeSince(occurance.when) + " назад"
   }
 
-
-  def stat(): Future[Db.Stat] =
+  def stat(): Future[Stat] =
     db.fetchStat()
 
 }
 
-
-case class Occurance(text: String, when: ZonedDateTime, messageId: Long)
 
 
