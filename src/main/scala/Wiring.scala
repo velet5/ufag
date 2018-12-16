@@ -8,7 +8,10 @@ import configuration.Configuration
 import http.ClientImpl
 import lingvo.Lingvo
 import oxford.{OxfordProcessor, OxfordServiceImpl}
-import persistence.{Db, Memory}
+import persistence.Db
+import persistence.dao.{ArticleDao, AskingDao, QueryDao, SubscriptionDao}
+import scalikejdbc.AutoSession
+import service.{ArticleService, AskingService, QueryService, SubscriptionService}
 import telegram.{TelegramImpl, UpdateHandlerImpl}
 
 import scala.concurrent.ExecutionContext
@@ -28,23 +31,35 @@ trait Wiring {
   val client = new ClientImpl
   val telegram = new TelegramImpl(configuration.telegram.token, client)
 
-  val db = new Db()(dbExecutionContext)
-  val memory = new Memory(db)
-  val lingo = new Lingvo(client, db)
-  val ox = new OxfordServiceImpl(db, client, new OxfordProcessor)
+
+  val queryDao = new QueryDao()(dbExecutionContext, AutoSession)
+  val queryService = new QueryService(queryDao)
+
+  val askingDao = new AskingDao()(dbExecutionContext, AutoSession)
+  val askingService = new AskingService(askingDao)
+
+  val articleDao = new ArticleDao()(dbExecutionContext, AutoSession)
+  val articleService = new ArticleService(articleDao)
+
+  val subscriptionDao = new SubscriptionDao()(dbExecutionContext, AutoSession)
+  val subscriptionService = new SubscriptionService(subscriptionDao)
+
+  val db = new Db(configuration.postgres)
+  val lingo = new Lingvo(client, articleService)
+  val ox = new OxfordServiceImpl(articleService, client, new OxfordProcessor)
 
   val bot = new BotImpl(
     telegram,
-    new LingvoHandler(db, memory, telegram, lingo),
+    new LingvoHandler(db, queryService, telegram, lingo),
     new OxfordHandler(ox),
     new HelpHandler,
     new RuDefineHandler(lingo),
     new StartHandler,
-    new StatisticsHandler(memory),
-    new AskHandler(telegram, db),
-    new AskReplyHandler(db, telegram),
-    new SubscribeHandler(db),
-    new UnsubscribeHandler(db))
+    new StatisticsHandler(queryService),
+    new AskHandler(configuration.ufag, telegram, askingService),
+    new AskReplyHandler(askingService, telegram),
+    new SubscribeHandler(subscriptionService),
+    new UnsubscribeHandler(subscriptionService))
 
   val updateHandler = new UpdateHandlerImpl(telegram, bot)
 

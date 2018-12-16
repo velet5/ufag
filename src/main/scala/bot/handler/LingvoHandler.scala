@@ -2,8 +2,9 @@ package bot.handler
 
 import bot.{Ignore, Lingvo, Outcome}
 import org.slf4j.LoggerFactory
-import persistence.model.Occurrence
+import persistence.model.Query
 import persistence.{Db, Memory}
+import service.QueryService
 import telegram.{Telegram, TelegramSendMessage}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -12,7 +13,7 @@ private object LingvoHandler {
   case class Message(message: TelegramSendMessage, remember: Boolean)
 }
 
-class LingvoHandler(db: Db, memory: Memory, telegram: Telegram, li: lingvo.Lingvo)
+class LingvoHandler(db: Db, queryService: QueryService, telegram: Telegram, li: lingvo.Lingvo)
                    (implicit ec: ExecutionContext) extends CommandHandler[Lingvo] {
 
   import LingvoHandler._
@@ -23,9 +24,9 @@ class LingvoHandler(db: Db, memory: Memory, telegram: Telegram, li: lingvo.Lingv
     val text = command.word
     val chatId = command.chatId.value
 
-    val occurrenceToMessage: Option[Occurrence] => Future[Message] = {
-      case Some(occurrence) =>
-        val message = TelegramSendMessage(chatId, memory.fag(occurrence), replyToMessageId = Some(occurrence.messageId))
+    val queryToMessage: Option[Query] => Future[Message] = {
+      case Some(query) =>
+        val message = TelegramSendMessage(chatId, Memory.fag(query.time), replyToMessageId = Some(query.messageId))
         Future.successful(Message(message, remember = true))
 
       case None =>
@@ -38,11 +39,11 @@ class LingvoHandler(db: Db, memory: Memory, telegram: Telegram, li: lingvo.Lingv
 
     val eventualUnit =
       for {
-        maybeOccurance <- memory.recall(chatId, text)
-        message <- occurrenceToMessage(maybeOccurance)
+        maybeQuery <- queryService.find(chatId, text)
+        message <- queryToMessage(maybeQuery)
         response <- telegram.sendMessage(message.message)
-        messageId = maybeOccurance.fold(response.result.messageId)(_.messageId)
-        _ = if (message.remember) memory.remember(chatId, text, messageId)
+        messageId = maybeQuery.fold(response.result.messageId)(_.messageId)
+        _ = if (message.remember) queryService.save(chatId, text, messageId)
       } yield ()
 
     eventualUnit

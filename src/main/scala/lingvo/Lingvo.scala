@@ -11,19 +11,17 @@ import http.Client
 import lingvo.LingvoProcessor.{EmptyResult, ServiceError, UnknownResponse}
 import org.apache.http.HttpHeaders
 import org.apache.http.message.BasicHeader
-import persistence.Db
 import persistence.model.Provider
+import service.ArticleService
 import util.TextUtils.isCyrillic
 import util.WordSimilarity
 
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Try
 
-class Lingvo(client: Client, db: Db) {
+class Lingvo(client: Client, articleService: ArticleService)(implicit ec: ExecutionContext) {
 
   // En-Ru (1033 → 1049)
-
-  import scala.concurrent.ExecutionContext.Implicits.global
 
   private val ApiKey = Configuration.properties.lingvo.apiKey
   private val English = 1033
@@ -96,16 +94,19 @@ class Lingvo(client: Client, db: Db) {
           Future.successful(article)
       }
 
-    db
-      .getArticle(text, provider)
+    articleService
+      .find(text, provider)
       .flatMap {
         case Some(value) => Future.successful(value.content)
-        case None => innerTranslate()
+        case None =>
+          for {
+            string <- innerTranslate()
+            _ <- articleService.save(text, string, provider)
+          } yield string
       }
       .flatMap {string =>
         processor.process(string) match {
           case Right(markdown) =>
-            db.saveArticle(text, string, provider)
             Future.successful(Right(markdown))
 
           case Left(EmptyResult) =>

@@ -7,8 +7,8 @@ import configuration.Configuration
 import http.Client
 import http.Client.Response
 import org.apache.http.message.BasicHeader
-import persistence.Db
 import persistence.model.Provider
+import service.ArticleService
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -30,7 +30,7 @@ object OxfordServiceImpl {
 
 }
 
-class OxfordServiceImpl(db: Db, client: Client, processor: OxfordProcessor)
+class OxfordServiceImpl(articleService: ArticleService, client: Client, processor: OxfordProcessor)
                        (implicit ex: ExecutionContext) extends OxfordService {
 
   import OxfordServiceImpl._
@@ -42,8 +42,8 @@ class OxfordServiceImpl(db: Db, client: Client, processor: OxfordProcessor)
     val text = str.replace("+", "%20")
     val uri = url + entriesApi + text
 
-    db
-      .getArticle(text, Provider.Oxford)
+    articleService
+      .find(text, Provider.Oxford)
       .flatMap {
         case Some(fromCache) =>
           Future.successful(FromDb(fromCache.content))
@@ -53,7 +53,7 @@ class OxfordServiceImpl(db: Db, client: Client, processor: OxfordProcessor)
         case FromDb(value)  =>
           processor.process(value).fold(identity, identity)
         case FromOx(Some(value)) =>
-          db.saveArticle(rawText, value, Provider.Oxford)
+          articleService.save(rawText, value, Provider.Oxford)
           processor.process(value).fold(identity, identity)
         case FromOx(None) =>
           "*Not found*"

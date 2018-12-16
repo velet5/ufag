@@ -1,28 +1,30 @@
 package bot.handler
 
 import bot._
-import configuration.Configuration
-import persistence.Db
-import telegram.{Telegram, TelegramForwardMessage}
+import configuration.UfagProperties
+import service.AskingService
+import telegram.{Telegram, TelegramForwardMessage, TelegramResponse}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-private object AskHandler {
-  private val ownerChatId = ChatId(Configuration.properties.ufag.ownerId)
-}
-
-class AskHandler(telegram: Telegram, db: Db)
+class AskHandler(properties: UfagProperties,
+                 telegram: Telegram,
+                 askingService: AskingService)
                 (implicit executionContext: ExecutionContext) extends CommandHandler[Ask] {
 
-  import AskHandler._
+  override def handle(command: Ask): Future[Outcome] = {
+    val message = TelegramForwardMessage(
+      chatId = properties.ownerId,
+      fromChatId = command.chatId.value,
+      command.messageId)
 
-  override def handle(command: Ask): Future[Outcome] =
+    def save(response: TelegramResponse) =
+      askingService.save(command.chatId.value, command.messageId, response.result.messageId)
+
     telegram
-      .forwardMessage(
-        TelegramForwardMessage(
-          chatId = ownerChatId.value,
-          fromChatId = command.chatId.value,
-          command.messageId))
-     .flatMap(r => db.saveAsking(command.chatId.value, command.messageId, r.result.messageId))
-     .map(_ => Ignore)
+      .forwardMessage(message)
+      .flatMap(save)
+      .map(_ => Ignore)
+  }
+
 }

@@ -2,21 +2,20 @@ package bot.handler
 
 import bot.{Outcome, SendMessage, Subscribe}
 import org.slf4j.LoggerFactory
-import persistence.Db
+import service.SubscriptionService
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-class SubscribeHandler(db: Db) extends CommandHandler[Subscribe] {
-
-  import scala.concurrent.ExecutionContext.Implicits.global
+class SubscribeHandler(subscriptionService: SubscriptionService)
+                      (implicit ec: ExecutionContext) extends CommandHandler[Subscribe] {
 
   private val log = LoggerFactory.getLogger(getClass)
 
   override def handle(command: Subscribe): Future[Outcome] = {
     val message = SendMessage(command.chatId, "Вы подписаны на новости")
 
-    db
+    subscriptionService
       .subscribe(command.chatId.value)
       .map(_ => message)
       .recover { case NonFatal(ex) =>
