@@ -3,10 +3,8 @@ package oxford
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
+import client.{Header, Response, RestClient, Uri}
 import configuration.Configuration
-import http.Client
-import http.Client.Response
-import org.apache.http.message.BasicHeader
 import persistence.model.Provider
 import service.ArticleService
 
@@ -30,14 +28,14 @@ object OxfordServiceImpl {
 
 }
 
-class OxfordServiceImpl(articleService: ArticleService, client: Client, processor: OxfordProcessor)
+class OxfordServiceImpl(articleService: ArticleService, client: RestClient, processor: OxfordProcessor)
                        (implicit ex: ExecutionContext) extends OxfordService {
 
   import OxfordServiceImpl._
 
   def define(rawText: String): Future[String] = {
-    val appIdHeader = new BasicHeader("app_id", applicationId)
-    val appKeyHeader = new BasicHeader("app_key", key)
+    val appIdHeader = Header("app_id", applicationId)
+    val appKeyHeader = Header("app_key", key)
     val str = URLEncoder.encode(rawText.toLowerCase, StandardCharsets.UTF_8.name())
     val text = str.replace("+", "%20")
     val uri = url + entriesApi + text
@@ -48,7 +46,7 @@ class OxfordServiceImpl(articleService: ArticleService, client: Client, processo
         case Some(fromCache) =>
           Future.successful(FromDb(fromCache.content))
         case None =>
-          client.get(uri, appIdHeader, appKeyHeader).map(processResponse).map(FromOx)
+          client.get(Uri(uri), Seq(appIdHeader, appKeyHeader)).map(processResponse).map(FromOx)
       }.map {
         case FromDb(value)  =>
           processor.process(value).fold(identity, identity)
@@ -61,6 +59,8 @@ class OxfordServiceImpl(articleService: ArticleService, client: Client, processo
   }
 
   private def processResponse(response: Response): Option[String] =
-    response.body.filter(_ => response.status == 200)
+    response.bodyOpt
+      .filter(_ => response.statusCode == 200)
+      .map(_.value)
 
 }

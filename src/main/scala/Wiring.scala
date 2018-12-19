@@ -5,8 +5,7 @@ import akka.stream.ActorMaterializer
 import bot.BotImpl
 import bot.handler._
 import configuration.Configuration
-import http.ClientImpl
-import lingvo.Lingvo
+import lingvo.{Authorizer, Lingvo, LingvoProcessor}
 import oxford.{OxfordProcessor, OxfordServiceImpl}
 import persistence.Db
 import persistence.dao.{ArticleDao, AskingDao, QueryDao, SubscriptionDao}
@@ -16,7 +15,7 @@ import telegram.{TelegramImpl, UpdateHandlerImpl}
 
 import scala.concurrent.ExecutionContext
 
-trait Wiring {
+trait Wiring extends Clients {
 
   implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
   implicit val actorSystem: ActorSystem = ActorSystem("my-system")
@@ -28,9 +27,7 @@ trait Wiring {
 
   val port: Int = configuration.ufag.port
 
-  val client = new ClientImpl
-  val telegram = new TelegramImpl(configuration.telegram.token, client)
-
+  val telegram = new TelegramImpl(configuration.telegram.token, restClient)
 
   val queryDao = new QueryDao()(dbExecutionContext, AutoSession)
   val queryService = new QueryService(queryDao)
@@ -45,8 +42,9 @@ trait Wiring {
   val subscriptionService = new SubscriptionService(subscriptionDao)
 
   val db = new Db(configuration.postgres)
-  val lingo = new Lingvo(client, articleService)
-  val ox = new OxfordServiceImpl(articleService, client, new OxfordProcessor)
+  val authorizer = new Authorizer(configuration.lingvo, restClient)
+  val lingo = new Lingvo(authorizer, configuration.lingvo, restClient, articleService, new LingvoProcessor)
+  val ox = new OxfordServiceImpl(articleService, restClient, new OxfordProcessor)
 
   val bot = new BotImpl(
     telegram,

@@ -14,7 +14,7 @@ object Configuration {
 }
 
 
-final case class LingvoProperties(apiKey: String)
+final case class LingvoProperties(apiKey: String, serviceUrl: String)
 final case class UfagProperties(port: Int, serviceUrl: String, ownerId: Long)
 final case class PostgresProperties(user: String, password: String)
 final case class TelegramProperties(token: String)

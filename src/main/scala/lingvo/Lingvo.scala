@@ -3,79 +3,34 @@ package lingvo
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
+import client.{Header, RestClient, Uri}
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import configuration.Configuration
-import http.Client
+import configuration.LingvoProperties
 import lingvo.LingvoProcessor.{EmptyResult, ServiceError, UnknownResponse}
 import org.apache.http.HttpHeaders
-import org.apache.http.message.BasicHeader
 import persistence.model.Provider
 import service.ArticleService
 import util.TextUtils.isCyrillic
 import util.WordSimilarity
 
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-class Lingvo(client: Client, articleService: ArticleService)(implicit ec: ExecutionContext) {
+class Lingvo(authorizer: Authorizer,
+             properties: LingvoProperties,
+             client: RestClient,
+             articleService: ArticleService,
+             processor: LingvoProcessor)
+            (implicit ec: ExecutionContext) {
 
-  // En-Ru (1033 → 1049)
-
-  private val ApiKey = Configuration.properties.lingvo.apiKey
-  private val English = 1033
-  private val Russian = 1049
-  private val ServiceUrl = "https://developers.lingvolive.com"
-
-  private val processor = new LingvoProcessor
+  import Lingvo._
 
   private val mapper =
     new ObjectMapper()
       .registerModule(DefaultScalaModule)
       .setSerializationInclusion(Include.NON_NULL)
-
-  @volatile
-  private var token: TokenState = TokenNotSet
-
-  sealed trait TokenState
-  case object TokenNotSet extends TokenState
-  case object TokenRetrieving extends TokenState
-  case class TokenSet(value: String) extends TokenState
-
-  sealed trait TranslationResult
-  case class TranslationArticle(text: String) extends TranslationResult
-  case object NeedAuth extends TranslationResult
-
-  private val emptyTranslation = "Я не знаю такого слова"
-  private val emptyResult: Either[String, String] = Left(emptyTranslation)
-
-  @volatile
-  private var promise = Promise[String]()
-
-  def auth(): Future[String] = {
-    def get(): Future[String] = {
-      promise = Promise[String]()
-      token = TokenRetrieving
-      val api = "/api/v1.1/authenticate"
-      val header = new BasicHeader(HttpHeaders.AUTHORIZATION, "Basic " + ApiKey)
-
-      client.post(ServiceUrl + api, header).foreach {value =>
-        value.body.foreach {text =>
-          promise.success(text)
-          token = TokenSet(text)
-        }
-      }
-
-      promise.future
-    }
-
-    token match {
-      case TokenSet(value) => Future.successful(value)
-      case TokenRetrieving => promise.future
-      case TokenNotSet => get()
-    }
-  }
 
   private def getArticle(
     text: String,
@@ -83,12 +38,11 @@ class Lingvo(client: Client, articleService: ArticleService)(implicit ec: Execut
     fetcher: (String, String) => Future[TranslationResult],
     onEmptyResult: String => Future[Either[String, String]] = _ => Future.successful(emptyResult)
   ): Future[Either[String, String]] = {
-    def innerTranslate(): Future[String] = auth()
+    def innerTranslate(): Future[String] = authorizer.auth()
       .flatMap(fetcher(_, text))
       .flatMap {
         case NeedAuth =>
-          token = TokenNotSet
-          innerTranslate()
+          authorizer.retrieve().flatMap(_ => innerTranslate())
 
         case TranslationArticle(article) =>
           Future.successful(article)
@@ -101,7 +55,7 @@ class Lingvo(client: Client, articleService: ArticleService)(implicit ec: Execut
         case None =>
           for {
             string <- innerTranslate()
-            _ <- articleService.save(text, string, provider)
+            _ <- articleService.save(text, string, provider) // TODO: save after processing
           } yield string
       }
       .flatMap {string =>
@@ -122,7 +76,7 @@ class Lingvo(client: Client, articleService: ArticleService)(implicit ec: Execut
   }
 
   private def correct(text: String): Future[Either[String, String]] =
-    auth()
+    authorizer.auth()
       .flatMap(fetchSuggestions(_, text))
       .map {
         case Array() | null =>
@@ -132,7 +86,7 @@ class Lingvo(client: Client, articleService: ArticleService)(implicit ec: Execut
             array
               .sortBy(WordSimilarity.calculate(text, _))
               .take(5)
-              .map("*" + _ + "*")
+              .map(word => s"*$word*")
               .mkString("\n"))
       }
 
@@ -146,15 +100,15 @@ class Lingvo(client: Client, articleService: ArticleService)(implicit ec: Execut
     val api = "/api/v1/Translation"
     val text = URLEncoder.encode(rawText, StandardCharsets.UTF_8.name()).replace("+", "%20")
     val query = s"?text=$text&srcLang=$from&dstLang=$to"
-    val uri = ServiceUrl + api + query
-    val header = new BasicHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+    val uri = properties.serviceUrl + api + query
+    val header = Header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
 
-    client.get(uri, header).map {response =>
-      response.status match {
+    client.get(Uri(uri), header).map {response =>
+      response.statusCode match {
         case 401 =>
           NeedAuth
         case _ =>
-          TranslationArticle(response.body.getOrElse(emptyTranslation))
+          TranslationArticle(response.bodyOpt.map(_.value).getOrElse(emptyTranslation))
       }
     }
   }
@@ -178,13 +132,27 @@ class Lingvo(client: Client, articleService: ArticleService)(implicit ec: Execut
         s"?text=$text&srcLang=$English&dstLang=$Russian"
       }
 
-    val uri = ServiceUrl + api + query
-    val header = new BasicHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+    val uri = properties.serviceUrl + api + query
+    val header = Header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
 
     client
-      .get(uri, header)
-      .map(_.body.flatMap(body => Try(mapper.readValue[Array[String]](body, classOf[Array[String]])).toOption))
+      .get(Uri(uri), header)
+      .map(_.bodyOpt.flatMap(body => Try(mapper.readValue[Array[String]](body.value, classOf[Array[String]])).toOption))
       .map(_.getOrElse(Array.empty))
   }
+
+}
+
+object Lingvo {
+
+  private val English = 1033
+  private val Russian = 1049
+
+  sealed trait TranslationResult
+  case class TranslationArticle(text: String) extends TranslationResult
+  case object NeedAuth extends TranslationResult
+
+  private val emptyTranslation = "Я не знаю такого слова"
+  private val emptyResult: Either[String, String] = Left(emptyTranslation)
 
 }

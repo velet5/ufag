@@ -1,12 +1,10 @@
 package telegram
 
+import client._
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import http.Client
-import http.Client.Response
 import org.apache.http.HttpHeaders
 import org.apache.http.entity.ContentType
-import org.apache.http.message.BasicHeader
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -16,8 +14,8 @@ trait Telegram {
   def forwardMessage(message: TelegramForwardMessage): Future[TelegramResponse]
 }
 
-class TelegramImpl(token: String, client: Client)
-                  (implicit executionContext: ExecutionContext) extends Telegram  {
+class TelegramImpl(token: String, client: RestClient)
+                  (implicit ec: ExecutionContext) extends Telegram  {
 
   def sendMessage(message: TelegramSendMessage): Future[TelegramResponse] =
     executeMessage(message, sendMessageUri)
@@ -31,16 +29,16 @@ class TelegramImpl(token: String, client: Client)
     performHttp(message, uri).flatMap(r => Future.fromTry(toTelegramResponse(r)))
 
   private def toTelegramResponse(response: Response): Try[TelegramResponse] =
-    response.body match {
-      case Some(body) => Success(mapper.readValue[TelegramResponse](body, classOf[TelegramResponse]))
+    response.bodyOpt match {
+      case Some(body) => Success(mapper.readValue[TelegramResponse](body.value, classOf[TelegramResponse]))
       case None => Failure(new RuntimeException("Telegram responded invalid body"))
     }
 
   private def performHttp[M](message: M, uri: String): Future[Response] = {
     val text = mapper.writeValueAsString(message)
-    val contentType = new BasicHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString)
+    val contentType = Header(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString)
     
-    client.post(uri, text, contentType)
+    client.post(Uri(uri), contentType, Body(text))
   }
 
   private val telegramApi = "https://api.telegram.org/bot"
