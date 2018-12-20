@@ -1,6 +1,5 @@
 package configuration
 
-
 final case class Configuration(
   lingvo: LingvoProperties,
   oxford: OxfordProperties,
@@ -8,14 +7,8 @@ final case class Configuration(
   postgres: PostgresProperties,
   telegram: TelegramProperties)
 
-
-object Configuration {
-  val properties: Configuration = pureconfig.loadConfigOrThrow[Configuration]
-}
-
-
 final case class LingvoProperties(apiKey: String, serviceUrl: String)
 final case class UfagProperties(port: Int, serviceUrl: String, ownerId: Long)
 final case class PostgresProperties(user: String, password: String)
 final case class TelegramProperties(token: String)
-final case class OxfordProperties(appId: String, apiKey: String)
+final case class OxfordProperties(appId: String, apiKey: String, serviceUrl: String)

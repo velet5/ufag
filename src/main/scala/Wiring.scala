@@ -2,11 +2,10 @@ import java.util.concurrent.{LinkedBlockingQueue, ThreadPoolExecutor, TimeUnit}
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import bot.BotImpl
 import bot.handler._
-import configuration.Configuration
+import bot.{BotImpl, Commands}
 import lingvo.{Authorizer, Lingvo, LingvoProcessor}
-import oxford.{OxfordProcessor, OxfordServiceImpl}
+import oxford.{OxfordClient, OxfordFormatter, OxfordServiceImpl}
 import persistence.Db
 import persistence.dao.{ArticleDao, AskingDao, QueryDao, SubscriptionDao}
 import scalikejdbc.AutoSession
@@ -15,19 +14,18 @@ import telegram.{TelegramImpl, UpdateHandlerImpl}
 
 import scala.concurrent.ExecutionContext
 
-trait Wiring extends Clients {
+trait Wiring extends Clients with Core {
 
   implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
   implicit val actorSystem: ActorSystem = ActorSystem("my-system")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   protected val dbExecutionContext: ExecutionContext =
+
     ExecutionContext.fromExecutor(new ThreadPoolExecutor(4, 8, 1L, TimeUnit.SECONDS, new LinkedBlockingQueue(100)))
 
-  private val configuration = Configuration.properties
+  val port: Int = properties.ufag.port
 
-  val port: Int = configuration.ufag.port
-
-  val telegram = new TelegramImpl(configuration.telegram.token, restClient)
+  val telegram = new TelegramImpl(properties.telegram.token, restClient)
 
   val queryDao = new QueryDao()(dbExecutionContext, AutoSession)
   val queryService = new QueryService(queryDao)
@@ -41,12 +39,17 @@ trait Wiring extends Clients {
   val subscriptionDao = new SubscriptionDao()(dbExecutionContext, AutoSession)
   val subscriptionService = new SubscriptionService(subscriptionDao)
 
-  val db = new Db(configuration.postgres)
-  val authorizer = new Authorizer(configuration.lingvo, restClient)
-  val lingo = new Lingvo(authorizer, configuration.lingvo, restClient, articleService, new LingvoProcessor)
-  val ox = new OxfordServiceImpl(articleService, restClient, new OxfordProcessor)
+  val oxfordClient = new OxfordClient(properties.oxford, articleService, restClient, mapper)
+
+  val db = new Db(properties.postgres)
+  val authorizer = new Authorizer(properties.lingvo, restClient)
+  val lingo = new Lingvo(authorizer, properties.lingvo, restClient, articleService, new LingvoProcessor)
+  val ox = new OxfordServiceImpl(oxfordClient, new OxfordFormatter)
+
+  val commands = new Commands(properties.ufag)
 
   val bot = new BotImpl(
+    commands,
     telegram,
     new LingvoHandler(db, queryService, telegram, lingo),
     new OxfordHandler(ox),
@@ -54,7 +57,7 @@ trait Wiring extends Clients {
     new RuDefineHandler(lingo),
     new StartHandler,
     new StatisticsHandler(queryService),
-    new AskHandler(configuration.ufag, telegram, askingService),
+    new AskHandler(properties.ufag, telegram, askingService),
     new AskReplyHandler(askingService, telegram),
     new SubscribeHandler(subscriptionService),
     new UnsubscribeHandler(subscriptionService))

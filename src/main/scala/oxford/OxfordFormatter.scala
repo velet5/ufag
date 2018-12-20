@@ -1,27 +1,10 @@
 package oxford
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import org.slf4j.LoggerFactory
 import util.RomanNumbers
 
-import scala.util.Try
+class OxfordFormatter {
 
-class OxfordProcessor {
-
-  def process(response: String): Either[String, String] = {
-    Try(mapper.readValue(response, classOf[OxfordResponse])).fold(
-      ex => {
-        log.error("Can't parse oxford response", ex)
-        Left("Ошибка")
-      },
-      ox => Right(format(ox)))
-  }
-
-  // private
-
-  private def format(oxfordResponse: OxfordResponse): String = {
+  def format(oxfordResponse: OxfordResponse): String = {
     implicit val sb: StringBuilder = new StringBuilder
 
     oxfordResponse.results.headOption.foreach {result =>
@@ -34,6 +17,8 @@ class OxfordProcessor {
 
     sb.toString()
   }
+
+  // private
 
   private def printLexicalEntry(lexicalEntry: LexicalEntry, index: Option[Int] = None)
                                (implicit sb: StringBuilder): Unit = {
@@ -81,12 +66,5 @@ class OxfordProcessor {
       senses.zipWithIndex.foreach { case (s, i) => printSense(s, index = Some(i + 1), parentIndex = index)}
     }
   }
-
-  private val log = LoggerFactory.getLogger(getClass)
-
-  private val mapper =
-    new ObjectMapper()
-      .registerModule(DefaultScalaModule)
-      .setSerializationInclusion(Include.NON_NULL)
 
 }

@@ -1,19 +1,13 @@
 package bot.parser
 
 import bot.{AskReply, Malformed, UpdateParser}
-import configuration.Configuration
+import configuration.UfagProperties
 import telegram.Update
 
-private object AskReplyParser {
-  val ownerId: Long = Configuration.properties.ufag.ownerId
-}
-
-class AskReplyParser extends UpdateParser[AskReply] {
-  import AskReplyParser._
-
+class AskReplyParser(properties: UfagProperties) extends UpdateParser[AskReply] {
   override def parse(update: Update): Option[Either[Malformed, AskReply]] =
     for {
-      message <- update.message if message.chat.id == ownerId
+      message <- update.message if message.chat.id == properties.ownerId
       reply <- message.replyToMessage
       user <- reply.forwardFrom
       text <- message.text

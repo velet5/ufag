@@ -9,7 +9,8 @@ trait Bot {
   def process(update: Update): Future[Outcome]
 }
 
-class BotImpl(telegram: Telegram,
+class BotImpl(commands: Commands,
+              telegram: Telegram,
               lingvoHandler: CommandHandler[Lingvo],
               oxfordHandler: CommandHandler[Oxford],
               helpHandler: CommandHandler[Help],
@@ -22,7 +23,7 @@ class BotImpl(telegram: Telegram,
               unsubscribeHandler: CommandHandler[Unsubscribe]) extends Bot {
 
   def process(update: Update): Future[Outcome] = {
-    val command = Command.parse(update)
+    val command = commands.parse(update)
     val outcome = processCommand(command)
 
     outcome

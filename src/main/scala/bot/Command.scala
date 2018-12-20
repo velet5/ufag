@@ -1,6 +1,7 @@
 package bot
 
 import bot.parser.AskReplyParser
+import configuration.UfagProperties
 import org.apache.commons.lang3.StringUtils.{removeStart, startsWith}
 import telegram.Update
 import util.TextUtils.isCyrillic
@@ -26,7 +27,7 @@ trait UpdateParser[C <: Command] {
   def parse(update: Update): Option[Either[Malformed, C]]
 }
 
-object Command {
+class Commands(ufagProperties: UfagProperties) {
 
   private case class BotCommand(command: String, text: Option[String])
 
@@ -39,7 +40,7 @@ object Command {
     simpleCommandParser("/start", Start),
     simpleCommandParser("/stat", Statistics),
     withMessageId("/ask", Ask),
-    new AskReplyParser,
+    new AskReplyParser(ufagProperties),
     simpleCommandParser("/sub", Subscribe),
     simpleCommandParser("/unsub", Unsubscribe)
   )
@@ -92,7 +93,6 @@ object Command {
         if (isCyrillic(text)) Right(RuDefine(chatId, text))
         else Right(Oxford(chatId, text))
       }
-
   }
 
   private def withMessageId[C <: Command](command: String, creator: (ChatId, Long) => C): UpdateParser[C] =
