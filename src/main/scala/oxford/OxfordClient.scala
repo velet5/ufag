@@ -25,16 +25,10 @@ class OxfordClient(properties: OxfordProperties,
 
   // private
 
-  def retrieve(word: String): Future[String] = {
-    val request = Get(
-      uri = Uri(properties.serviceUrl + "/entries/en/" + UrlUtils.encode(word)),
-      headers = Seq(
-        Header("app_id", properties.appId),
-        Header("app_key", properties.apiKey)
-      )
-    )
+  private def retrieve(word: String): Future[String] = {
+    val request = buildRequest(word)
 
-    def handle(response: Response): String = {
+    val handle = (response: Response) => {
       if (response.statusCode != 200) throw new FailedRequestException(request, response.statusCode)
 
       response.bodyOpt
@@ -49,6 +43,15 @@ class OxfordClient(properties: OxfordProperties,
         value
       }
   }
+
+  private def buildRequest(word: String): Request =
+    Get(
+      uri = Uri(properties.serviceUrl + "/entries/en/" + UrlUtils.encode(word)),
+      headers = Seq(
+        Header("app_id", properties.appId),
+        Header("app_key", properties.apiKey)
+      )
+    )
 
 }
 
