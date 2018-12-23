@@ -1,5 +1,6 @@
 package client
 
+import client.HttpMethod.{GET, POST}
 import org.apache.http.HttpEntity
 import org.apache.http.client.methods.{HttpGet, HttpPost}
 import org.apache.http.entity.StringEntity
@@ -7,7 +8,14 @@ import org.apache.http.message.BasicHeader
 
 import scala.io.Source
 
-sealed trait Request
+sealed trait Request {
+  def uri: Uri
+  def headers: Seq[Header]
+  def method: HttpMethod = this match {
+    case _: Get => GET
+    case _: Post => POST
+  }
+}
 
 case class Get(uri: Uri, headers: Seq[Header]) extends Request
 case class Post(uri: Uri, headers: Seq[Header], bodyOpt: Option[Body]) extends Request

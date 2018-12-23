@@ -2,8 +2,9 @@ package oxford
 
 import client._
 import com.fasterxml.jackson.databind.ObjectMapper
+import common.exception.EmptyBodyException
 import configuration.OxfordProperties
-import oxford.exception.{EmptyBodyException, FailedRequestException}
+import oxford.exception.FailedRequestException
 import persistence.model.Provider
 import service.ArticleService
 import util.UrlUtils

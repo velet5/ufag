@@ -1,7 +1,9 @@
-package oxford.exception
+package common.exception
 
-import client.Request
+import client.{HttpMethod, Request, Uri}
 
-class EmptyBodyException(request: Request) extends RuntimeException(
-  s"Request $request result in empty body"
-)
+class EmptyBodyException(httpMethod: HttpMethod, uri: Uri) extends RuntimeException(
+  s"Request $httpMethod $uri resulted in empty body"
+) {
+  def this(request: Request) = this(request.method, request.uri)
+}

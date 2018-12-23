@@ -33,7 +33,6 @@ object LingvoProcessor {
   /** When we want to skip a part of article completely */
   case object Empty extends Part
 
-
   sealed trait ProcessorError
   case object EmptyResult extends ProcessorError
   case object ServiceError extends ProcessorError

@@ -23,4 +23,8 @@ trait Clients {
     new HttpClientImpl[Request, Response](httpAsyncClient)
   )
 
+  if (!httpAsyncClient.isRunning) {
+    httpAsyncClient.start()
+  }
+
 }

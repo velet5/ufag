@@ -2,19 +2,20 @@ package bot.handler
 
 import bot.{Ignore, Lingvo, Outcome}
 import org.slf4j.LoggerFactory
+import persistence.Memory
 import persistence.model.Query
-import persistence.{Db, Memory}
 import service.QueryService
 import telegram.{Telegram, TelegramSendMessage}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-private object LingvoHandler {
-  case class Message(message: TelegramSendMessage, remember: Boolean)
-}
-
-class LingvoHandler(db: Db, queryService: QueryService, telegram: Telegram, li: lingvo.Lingvo)
-                   (implicit ec: ExecutionContext) extends CommandHandler[Lingvo] {
+class LingvoHandler(
+  queryService: QueryService,
+  telegram: Telegram,
+  lingvoService: lingvo.LingvoService
+)(
+  implicit ec: ExecutionContext
+) extends CommandHandler[Lingvo] {
 
   import LingvoHandler._
 
@@ -30,7 +31,7 @@ class LingvoHandler(db: Db, queryService: QueryService, telegram: Telegram, li: 
         Future.successful(Message(message, remember = true))
 
       case None =>
-        li
+        lingvoService
           .translate(text)
           .map(_.fold(
             l => Message(TelegramSendMessage(chatId, l), remember = false),
@@ -56,4 +57,8 @@ class LingvoHandler(db: Db, queryService: QueryService, telegram: Telegram, li: 
       .map(_ => Ignore)
   }
   
+}
+
+private object LingvoHandler {
+  case class Message(message: TelegramSendMessage, remember: Boolean)
 }
