@@ -1,5 +1,7 @@
 package client
 
+import java.nio.charset.StandardCharsets
+
 import client.HttpMethod.{GET, POST}
 import org.apache.http.HttpEntity
 import org.apache.http.client.methods.{HttpGet, HttpPost}
@@ -73,7 +75,7 @@ object Request {
     headers.map(toHttpHeader).toArray
 
   private def toHttpEntity(text: String): HttpEntity =
-    new StringEntity(text)
+    new StringEntity(text, StandardCharsets.UTF_8)
 
   private def toHttpHeader(header: Header): org.apache.http.Header =
     new BasicHeader(header.name, header.value)
