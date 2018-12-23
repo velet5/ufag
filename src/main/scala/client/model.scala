@@ -40,7 +40,8 @@ object Response {
       val statusCode = response.getStatusLine.getStatusCode
       val bodyOpt =
         Option(response.getEntity)
-          .map(Source fromInputStream _.getContent)
+          .map(_.getContent)
+          .map(Source.fromInputStream(_, "UTF-8"))
           .map(_.mkString)
           .map(Body)
 
