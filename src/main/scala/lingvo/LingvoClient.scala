@@ -1,7 +1,9 @@
 package lingvo
 
+import client.HttpMethod.GET
 import client._
 import com.fasterxml.jackson.databind.ObjectMapper
+import common.exception.EmptyBodyException
 import configuration.LingvoProperties
 import org.apache.http.HttpHeaders.AUTHORIZATION
 import persistence.model.Provider
@@ -23,25 +25,33 @@ class LingvoClient(
 
   import LingvoClient._
 
-  def getTranslation(word: String): Future[String] = {
+  def getTranslation(word: String): Future[String] =
     articleService
       .find(word, Provider.Lingvo)
       .flatMap(_.fold(translate(word))(Future successful _.content))
+
+  def getRussianDefinition(word: String): Future[String] = {
+    articleService
+      .find(word, Provider.LingvoRu)
+      .flatMap(_.fold(define(word))(Future successful _.content))
   }
 
-  def getCorrections(word: String): Future[o  [String]] =
-    correct(word)
+  def getCorrections(word: String): Future[Option[Seq[String]]] =
+    authorizedGet(Uri(properties.serviceUrl + "/api/v1/Suggests" + buildQuery(word)))
+      .map(body => Try(mapper.readValue[Array[String]](body, classOf[Array[String]])).toOption)
+      .map(_.map(_.toSeq))
 
   // private
 
-  private def correct(word: String): Future[Option[Seq[String]]] =
-    authorizedGet(Uri(properties.serviceUrl + "/api/v1/Suggests" + buildQuery(word)))
-      .map(_.bodyOpt.flatMap(body => Try(mapper.readValue[Array[String]](body.value, classOf[Array[String]])).toOption))
-      .map(_.map(_.toSeq))
+  private def define(word: String): Future[String] =
+    authorizedGet(Uri(
+      properties.serviceUrl +
+        "/api/v1/Translation" +
+        s"?text=${encode(word)}&srcLang=$Russian&dstLang=$Russian"
+    ))
 
   private def translate(word: String): Future[String] =
     authorizedGet(Uri(properties.serviceUrl + "/api/v1/Translation" + buildQuery(word)))
-      .map(_.bodyOpt.map(_.value).getOrElse(throw ???))
 
   private def buildQuery(word: String): String =
     if (isCyrillic(word))
@@ -49,7 +59,7 @@ class LingvoClient(
     else
       s"?text=${encode(word)}&srcLang=$English&dstLang=$Russian"
 
-  private def authorizedGet(uri: Uri): Future[Response] = {
+  private def authorizedGet(uri: Uri): Future[String] = {
     def go(token: String) =
       restClient.execute(Get(uri, Seq(Header(AUTHORIZATION, "Bearer " + token))))
 
@@ -61,6 +71,8 @@ class LingvoClient(
           Future.successful(response)
       }
     }
+    .map(_.bodyOpt.map(_.value).getOrElse(throw new EmptyBodyException(GET, uri)))
+
   }
 
   private def auth(): Future[String] =
@@ -98,9 +110,10 @@ class LingvoClient(
   @volatile
   private var promise = Promise[String]()
 
-  private lazy val authRequest = Request(
+  private lazy val authRequest = Post(
     Uri(properties.serviceUrl + "/api/v1.1/authenticate"),
-    Header(AUTHORIZATION, "Basic " + properties.apiKey)
+    Seq(Header(AUTHORIZATION, "Basic " + properties.apiKey)),
+    None
   )
 
 }
