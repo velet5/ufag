@@ -38,7 +38,7 @@ class LingvoHandler(
             r => Message(TelegramSendMessage(chatId, r), remember = true)))
     }
 
-    val eventualUnit =
+    val future =
       for {
         maybeQuery <- queryService.find(chatId, text)
         message <- queryToMessage(maybeQuery)
@@ -47,7 +47,7 @@ class LingvoHandler(
         _ = if (message.remember) queryService.save(chatId, text, messageId)
       } yield ()
 
-    eventualUnit
+    future
       .recoverWith {case ex: Throwable =>
         log.error(s"Cannot process lingvo [$text]", ex)
         telegram

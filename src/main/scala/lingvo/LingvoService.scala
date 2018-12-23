@@ -2,6 +2,7 @@ package lingvo
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import lingvo.LingvoProcessor.{EmptyResult, ProcessorError, ServiceError, UnknownResponse}
+import persistence.model.Provider
 import service.ArticleService
 import util.WordSimilarity
 
@@ -21,17 +22,8 @@ class LingvoService(
   def translate(word: String): Future[Either[String, String]] =
     lingvoClient
       .getTranslation(word)
-      .map(processor.process)
-      .flatMap(_.fold({
-          case EmptyResult =>
-            lingvoClient
-              .getCorrections(word)
-              .map(_.fold(emptyResult)(seq => formatCorrections(word, seq)))
-          case other =>
-            Future.successful(Left(formatError(other)))
-        },
-        s => Future.successful(Right(s))))
-    .recover {case _ => Left("*Ошибка выполнения*") }
+      .flatMap(process(word, _))
+      .recover { case _ => Left("*Ошибка выполнения*") }
 
   def defineRu(word: String): Future[Either[String, String]] =
     lingvoClient
@@ -41,14 +33,27 @@ class LingvoService(
 
   // private
 
-  private def formatCorrections(word: String, seq: Seq[String]): Either[String, String] = {
+  private def process(word: String, text: String): Future[Either[String, String]] =
+    processor.process(text).fold({
+      case EmptyResult =>
+        lingvoClient
+          .getCorrections(word)
+          .map(_.fold(emptyResult)(seq => formatCorrections(word, seq)))
+      case other =>
+        Future.successful(Left(formatError(other)))
+    },
+    s => {
+      articleService.save(word, text, Provider.Lingvo)
+      Future.successful(Right(s))
+    })
+
+  private def formatCorrections(word: String, seq: Seq[String]): Either[String, String] =
     Left("Возможно вы имели в виду: \n" +
       seq
         .sortBy(WordSimilarity.calculate(word, _))
         .take(5)
-        .map(word => s"*$word* (/_$word)")
+        .map(word => s"*$word*")
         .mkString("\n"))
-  }
 
   private def formatError(error: ProcessorError): String =
     error match {

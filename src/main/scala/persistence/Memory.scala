@@ -5,7 +5,14 @@ import java.time.temporal.ChronoUnit
 
 object Memory {
 
-  case class PluralForms(`1`: String, `2-4`: String, `5-0`: String) {
+  def fag(when: ZonedDateTime): String = {
+    "Похоже что ты пидор, потому что я уже отвечал на этот запрос " + timeSince(when) + " назад"
+  }
+
+  // private
+
+  private case class PluralForms(`1`: String, `2-4`: String, `5-0`: String) {
+    // todo: correctly handle number 12
     def format(number: Long): String = {
       val form =
         number.toString.last match {
@@ -18,10 +25,10 @@ object Memory {
     }
   }
 
-  val day = PluralForms("день", "дня", "дней")
-  val hour = PluralForms("час", "часа", "часов")
-  val minute = PluralForms("минуту", "минуты", "минут")
-  val second = PluralForms("секунду", "секунды", "секунд")
+  private val day = PluralForms("день", "дня", "дней")
+  private val hour = PluralForms("час", "часа", "часов")
+  private val minute = PluralForms("минуту", "минуты", "минут")
+  private val second = PluralForms("секунду", "секунды", "секунд")
 
   private def timeSince(time: ZonedDateTime): String = {
     val now = ZonedDateTime.now()
@@ -38,8 +45,5 @@ object Memory {
       .mkString(" ")
   }
 
-  def fag(when: ZonedDateTime): String = {
-    "Похоже что ты пидор, потому что я уже отвечал на этот запрос " + timeSince(when) + " назад"
-  }
 }
 
