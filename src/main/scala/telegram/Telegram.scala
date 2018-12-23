@@ -14,7 +14,7 @@ trait Telegram {
   def forwardMessage(message: TelegramForwardMessage): Future[TelegramResponse]
 }
 
-class TelegramImpl(token: String, client: RestClient)
+class TelegramImpl(token: String, client: RestClient, mapper: ObjectMapper)
                   (implicit ec: ExecutionContext) extends Telegram  {
 
   def sendMessage(message: TelegramSendMessage): Future[TelegramResponse] =
@@ -44,7 +44,5 @@ class TelegramImpl(token: String, client: RestClient)
   private val telegramApi = "https://api.telegram.org/bot"
   private val sendMessageUri: String = telegramApi + token + "/sendMessage"
   private val forwardMessageUri: String = telegramApi + token + "/forwardMessage"
-
-  private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
 
 }

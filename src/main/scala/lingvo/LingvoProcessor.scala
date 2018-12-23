@@ -39,7 +39,7 @@ object LingvoProcessor {
   case object UnknownResponse extends ProcessorError
 }
 
-class LingvoProcessor {
+class LingvoProcessor(mapper: ObjectMapper) {
 
   import LingvoProcessor._
 
@@ -201,9 +201,5 @@ class LingvoProcessor {
   }
 
   private val log = LoggerFactory.getLogger(getClass)
-  private val mapper =
-    new ObjectMapper()
-      .registerModule(DefaultScalaModule)
-      .setSerializationInclusion(Include.NON_NULL)
 
 }

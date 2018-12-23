@@ -26,7 +26,7 @@ trait Wiring extends Clients with Core {
   val db = new Db(properties.postgres)
   val port: Int = properties.ufag.port
 
-  val telegram = new TelegramImpl(properties.telegram.token, restClient)
+  val telegram = new TelegramImpl(properties.telegram.token, restClient, mapper)
 
   val queryDao = new QueryDao()(dbExecutionContext, AutoSession)
   val queryService = new QueryService(queryDao)
@@ -44,7 +44,7 @@ trait Wiring extends Clients with Core {
   val ox = new OxfordServiceImpl(oxfordClient, new OxfordFormatter)
 
   val lingvoClient = new LingvoClient(properties.lingvo, articleService, restClient, mapper)
-  val lingvo = new LingvoService(lingvoClient, new LingvoProcessor, articleService, mapper)
+  val lingvo = new LingvoService(lingvoClient, new LingvoProcessor(mapper), articleService, mapper)
 
   val commands = new Commands(properties.ufag)
 
