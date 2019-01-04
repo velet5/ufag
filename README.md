@@ -1,5 +1,7 @@
 # ufag
 
+![Build status](https://travis-ci.com/velet5/ufag.svg?branch=master)
+
 Telegram bot https://t.me/ufagbot
 
 Russian-English and English-Russian dictionary bot.
