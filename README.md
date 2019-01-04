@@ -1,6 +1,6 @@
 # ufag
 
-![Build status](https://travis-ci.com/velet5/ufag.svg?branch=master)
+[![Build Status](https://travis-ci.com/velet5/ufag.svg?branch=master)](https://travis-ci.com/velet5/ufag)
 
 Telegram bot https://t.me/ufagbot
 
