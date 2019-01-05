@@ -15,7 +15,9 @@ after_success:
  - echo "$SSH_PRIVATE_KEY" | base64 --decode > /tmp/deploy_rsa
  - eval "$(ssh-agent -s)"
  - chmod 600 /tmp/deploy_rsa
- - printf "$HOST $SSH_PUBLIC_KEY" >> $HOME/.ssh/known_hosts
+ - printf "$HOST " >> $HOME/.ssh/known_hosts
+ - printf $(echo "$SSH_PUBLIC_KEY" | base64 --decode) >> $HOME/.ssh/known_hosts
+ - printf "\n" >> $HOME/.ssh/known_hosts
  - scp -i /tmp/deploy_rsa $HOME/build/velet5/ufag/target/scala-2.12/ufag-assembly-0.1.jar $USER@$HOST:/home/$USER/ufag/ufag-$(date +%Y-%m-%d-%H-%M-%S).jar
 
 cache:
