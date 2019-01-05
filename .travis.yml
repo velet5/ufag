@@ -12,10 +12,9 @@ addons:
   ssh_known_hosts: $HOST
 
 after_success:
- - echo "$SSH_PRIVATE_KEY" | base64 --decode > /tmp/deploy_rsa
- - eval "$(ssh-agent -s)"
- - chmod 600 /tmp/deploy_rsa
- - scp -o "StrictHostKeyChecking no" -i /tmp/deploy_rsa $HOME/build/velet5/ufag/target/scala-2.12/ufag-assembly-0.1.jar $USER@$HOST:/home/$USER/ufag/ufag-$(date +%Y-%m-%d-%H-%M-%S).jar
+ - echo "$SSH_PRIVATE_PEM_BASE64" | base64 --decode > /tmp/deploy_rsa.pem 
+ - chmod 600 /tmp/deploy_rsa.pem
+ - scp -o "StrictHostKeyChecking no" -i /tmp/deploy_rsa.pem $HOME/build/velet5/ufag/target/scala-2.12/ufag-assembly-0.1.jar $USER@$HOST:/home/$USER/ufag/ufag-$(date +%Y-%m-%d-%H-%M-%S).jar
 
 cache:
   directories:
