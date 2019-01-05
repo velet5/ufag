@@ -7,14 +7,16 @@ scala:
    
 script:
   - sbt assembly
-  
+
 addons:
-  ssh_known_hosts: $HOST
+  ssh_known_hosts: - 18.224.69.122
 
 after_success:
- - echo "$SSH_PRIVATE_PEM_BASE64" | base64 --decode > /tmp/deploy_rsa.pem 
- - chmod 600 /tmp/deploy_rsa.pem
- - scp -o StrictHostKeyChecking=no -i /tmp/deploy_rsa.pem $HOME/build/velet5/ufag/target/scala-2.12/ufag-assembly-0.1.jar $USER@$HOST:/home/$USER/ufag/ufag-$(date +%Y-%m-%d-%H-%M-%S).jar
+ - echo "$SSH_PRIVATE_KEY_BASE64_ENCODED" | base64 --decode > $HOME/.ssh/deploy_rsa
+ - chmod 0600 $HOME/.ssh/deploy_rsa
+ - eval `ssh-agent`
+ - ssh-add $HOME/.ssh/deploy_rsa
+ - scp -o StrictHostKeyChecking=no -i $HOME/.ssh/deploy_rsa $HOME/build/velet5/ufag/target/scala-2.12/ufag-assembly-0.1.jar $USER@$HOST:/home/$USER/ufag/ufag-$(date +%Y-%m-%d-%H-%M-%S).jar
 
 cache:
   directories:
