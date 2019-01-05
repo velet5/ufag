@@ -9,7 +9,7 @@ script:
   - sbt assembly
 
 addons:
-  ssh_known_hosts: - 18.224.69.122
+  ssh_known_hosts: 18.224.69.122
 
 after_success:
  - echo "$SSH_PRIVATE_KEY_BASE64_ENCODED" | base64 --decode > $HOME/.ssh/deploy_rsa
