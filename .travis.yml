@@ -19,7 +19,7 @@ after_success:
  - ssh-add $HOME/.ssh/deploy_rsa
  - scp -o StrictHostKeyChecking=no -i $HOME/.ssh/deploy_rsa $HOME/build/velet5/ufag/target/scala-2.12/ufag-assembly-0.1.jar $REMOTE_USERNAME@$HOST:/home/$REMOTE_USERNAME/ufag/dist/ufag-$(date +%Y-%m-%d-%H-%M-%S).jar
  - scp -o StrictHostKeyChecking=no -i $HOME/.ssh/deploy_rsa $HOME/build/velet5/ufag/scripts/deploy.sh $REMOTE_USERNAME@$HOST:/home/$REMOTE_USERNAME/ufag/
- - ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/deploy_rsa "bash /home/$REMOTE_USERNAME/ufag/deploy.sh"
+ - ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/deploy_rsa $REMOTE_USERNAME@$HOST "bash /home/$REMOTE_USERNAME/ufag/deploy.sh"
 
 cache:
   directories:
