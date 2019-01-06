@@ -4,6 +4,10 @@ jdk: oraclejdk8
 
 scala:
   - 2.12.8
+
+branches:
+  only:
+    - master
    
 script:
   - sbt assembly
@@ -17,6 +21,5 @@ after_success:
 
 cache:
   directories:
-  - $HOME/.m2
   - $HOME/.ivy2
   - $HOME/.sbt
