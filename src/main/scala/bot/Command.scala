@@ -34,8 +34,6 @@ class Commands(ufagProperties: UfagProperties) {
   val parsers: Seq[UpdateParser[_ <: Command]] = Seq(
     definitionParser(),
     defaultParser(Lingvo),
-    requiredTextCommandParser("/ox", Oxford),
-    requiredTextCommandParser("/ru", RuDefine),
     simpleCommandParser("/help", Help),
     simpleCommandParser("/start", Start),
     simpleCommandParser("/stat", Statistics),
@@ -71,16 +69,6 @@ class Commands(ufagProperties: UfagProperties) {
         chatId <- maybeChatId(update)
         c <- maybeBotCommand(update) if c.command == command
       } yield Right(creator(chatId))
-
-  private def requiredTextCommandParser[C <: Command](command: String, creator: (ChatId, String) => C): UpdateParser[C]  =
-    update =>
-      for {
-        chatId <- maybeChatId(update)
-        c <- maybeBotCommand(update) if c.command == command
-      } yield c.text match {
-        case Some(text) => Right(creator(chatId, text.toLowerCase))
-        case None => Left(Malformed(chatId, s"Команда `$command` требует дополнительный текст, напишите что нибудь после `$command`"))
-      }
 
   private def definitionParser(): UpdateParser[Command] = {
     update =>
