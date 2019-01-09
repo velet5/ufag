@@ -4,6 +4,8 @@ version := "0.1"
 
 scalaVersion := "2.12.6"
 
+mainClass := Some("Application")
+
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http" % "10.1.1",
   "com.typesafe.akka" %% "akka-stream" % "2.5.12",
@@ -15,5 +17,6 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "com.github.pureconfig" %% "pureconfig" % "0.9.1",
   "org.apache.commons" % "commons-text" % "1.4",
-  "org.typelevel" %% "cats-core" % "1.4.0"
+  "org.typelevel" %% "cats-core" % "1.4.0",
+  "org.liquibase" % "liquibase-core" % "3.6.2"
 )

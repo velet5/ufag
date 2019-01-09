@@ -8,7 +8,18 @@ final case class Configuration(
   telegram: TelegramProperties)
 
 final case class LingvoProperties(apiKey: String, serviceUrl: String)
+
 final case class UfagProperties(port: Int, serviceUrl: String, ownerId: Long)
-final case class PostgresProperties(user: String, password: String)
+
+final case class PostgresProperties(
+  connectionString: String,
+  user: String,
+  password: String,
+  migrationsFile: String)
+
 final case class TelegramProperties(token: String)
-final case class OxfordProperties(appId: String, apiKey: String, serviceUrl: String)
+
+final case class OxfordProperties(
+  appId: String,
+  apiKey: String,
+  serviceUrl: String)
