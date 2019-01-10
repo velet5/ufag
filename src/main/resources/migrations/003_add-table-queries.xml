@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog/1.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog/1.9
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd">
+    <changeSet author="velet5" id="003_01_add-table">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="ufag.queries"/></not>
+        </preConditions>
+        <sql>
+            CREATE TABLE ufag.queries (
+                chat_id bigint NOT NULL,
+                text text NOT NULL,
+                "time" timestamp without time zone NOT NULL,
+                message_id bigint NOT NULL,
+                provider integer DEFAULT 1 NOT NULL
+            );
+        </sql>
+        <rollback>drop table ufag.queries;</rollback>
+    </changeSet>
+
+    <changeSet author="velet5" id="003_02_add-chat-id-text-index">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="queries_chat_id_text_idx" schemaName="ufag"/>
+            </not>
+        </preConditions>
+        <sql>
+            CREATE INDEX queries_search_idx ON ufag.queries USING btree (chat_id, text, provider);
+        </sql>
+        <rollback>drop index ufag.queries_chat_id_text_idx;</rollback>
+    </changeSet>
+
+    <changeSet author="velet5" id="003_03_add-time-index">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="queries_time_idx" schemaName="ufag"/>
+            </not>
+        </preConditions>
+        <sql>
+            CREATE INDEX queries_time_idx ON ufag.queries USING btree ("time");
+        </sql>
+        <rollback>drop index ufag.queries_time_idx;</rollback>
+    </changeSet>
+
+</databaseChangeLog>

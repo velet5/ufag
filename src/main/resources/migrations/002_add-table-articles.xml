@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog/1.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog/1.9
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd">
+    <changeSet author="velet5" id="002_01_add-table">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="ufag.articles"/></not>
+        </preConditions>
+        <sql>
+            CREATE TABLE ufag.articles (
+                search_text text NOT NULL,
+                content text NOT NULL,
+                provider integer DEFAULT 1 NOT NULL
+            );
+        </sql>
+        <rollback>drop table ufag.articles;</rollback>
+    </changeSet>
+
+    <changeSet author="velet5" id="002_02_add-constraint">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT count(*)
+                FROM information_schema.constraint_table_usage
+                WHERE
+                    table_schema = 'ufag' and
+                    table_name = 'articles' and
+                    constraint_name = 'articles_unique_entry';
+            </sqlCheck>
+        </preConditions>
+        <sql>
+            ALTER TABLE ONLY ufag.articles
+            ADD CONSTRAINT articles_unique_entry UNIQUE (search_text, provider);
+        </sql>
+        <rollback>alter table ufag.articles drop constraint articles_unique_entry;</rollback>
+    </changeSet>
+
+</databaseChangeLog>

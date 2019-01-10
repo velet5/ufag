@@ -4,7 +4,12 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog/1.9
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd">
-    <changeSet author="velet5" id="001_01_add-schema" runAlways="true">
+    <changeSet author="velet5" id="001_01_add-schema">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT count(*) FROM information_schema.schemata WHERE schema_name = 'ufag'
+            </sqlCheck>
+        </preConditions>
         <sql>create schema if not exists ufag;</sql>
         <rollback>drop schema ufag;</rollback>
     </changeSet>
