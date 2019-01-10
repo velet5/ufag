@@ -5,4 +5,7 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
     <include file="migrations/001_add-schema-ufag.xml"/>
+    <include file="migrations/002_add-table-articles.xml"/>
+    <include file="migrations/003_add-table-queries.xml"/>
+    <include file="migrations/004_add-table-asking.xml"/>
 </databaseChangeLog>
