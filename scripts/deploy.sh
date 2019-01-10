@@ -6,6 +6,10 @@ UFAG_PID_FILE=ufag.pid
 UFAG_JAR=$(ls dist | sort | tail -n1)
 UFAG_OLD_PID=$(cat ${UFAG_PID_FILE})
 
+# APPLY sql migrations
+
+java -cp ${UFAG_JAR} -Dconfig.file=${HOME}/ufag/application.conf LiquibaseRunner
+
 # SEND kill signal to current bot
 kill ${UFAG_OLD_PID}
 
