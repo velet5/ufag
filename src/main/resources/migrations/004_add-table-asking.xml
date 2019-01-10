@@ -6,7 +6,7 @@
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd">
     <changeSet author="velet5" id="002_01_add-table">
         <preConditions onFail="MARK_RAN">
-            <not><tableExists tableName="ufag.asking"/></not>
+            <not><tableExists tableName="asking" schemaName="ufag"/></not>
         </preConditions>
         <sql>
             CREATE TABLE ufag.asking (
