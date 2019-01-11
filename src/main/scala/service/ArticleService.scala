@@ -1,19 +1,25 @@
 package service
 
+import persistence.Db
 import persistence.dao.ArticleDao
 import persistence.model.Article
 import persistence.model.Provider.Provider
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class ArticleService(articleDao: ArticleDao) {
+class ArticleService(
+  db: Db,
+  articleDao: ArticleDao
+)(
+  implicit ec: ExecutionContext
+) {
 
   def find(text: String, provider: Provider): Future[Option[Article]] = {
-    articleDao.find(text, provider)
+    db.run(articleDao.find(text, provider))
   }
 
-  def save(searchText: String, content: String, provider: Provider): Future[Unit] = {
-    articleDao.save(searchText, content, provider)
+  def save(searchText: String, content: String, provider: Provider): Future[Int] = {
+    db.run(articleDao.save(searchText, content, provider))
   }
 
 }
