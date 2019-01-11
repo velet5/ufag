@@ -19,13 +19,10 @@ class ArticleDao()
       .filter(_.provider === provider.bind)
       .result
       .headOption
-      .map(_.map {case (searchText, content, prov) =>
-        Article(searchText, content, prov) // FIXME: wtf is this
-      })
   }
 
-  def save(searchText: String, content: String, provider: Provider): DBIOAction[Int, NoStream, Write] = {
-    ArticleTable.articles += (searchText, content, provider)
+  def save(article: Article): DBIOAction[Int, NoStream, Write] = {
+    ArticleTable.articles += article
   }
 
 }

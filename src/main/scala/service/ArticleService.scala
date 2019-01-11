@@ -19,7 +19,9 @@ class ArticleService(
   }
 
   def save(searchText: String, content: String, provider: Provider): Future[Int] = {
-    db.run(articleDao.save(searchText, content, provider))
+    val article = Article(searchText, content, provider)
+    
+    db.run(articleDao.save(article))
   }
 
 }

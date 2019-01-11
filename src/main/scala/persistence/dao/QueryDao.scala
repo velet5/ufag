@@ -44,8 +44,8 @@ class QueryDao()
   }
 
   def count(): Future[Int] = Future {
-    val a = Article.syntax("a")
-    withSQL(select(sql.count).from(Article as a))
+    val q = Query.syntax("a")
+    withSQL(select(sql.count).from(Query as q))
       .map(rs => rs.int(1))
       .single()
       .apply()
