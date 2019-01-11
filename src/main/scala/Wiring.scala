@@ -34,8 +34,8 @@ trait Wiring extends Clients with Core {
   val askingDao = new AskingDao()(dbExecutionContext, AutoSession)
   val askingService = new AskingService(askingDao)
 
-  val articleDao = new ArticleDao()(dbExecutionContext, AutoSession)
-  val articleService = new ArticleService(articleDao)
+  val articleDao = new ArticleDao()(dbExecutionContext)
+  val articleService = new ArticleService(db, articleDao)
 
   val subscriptionDao = new SubscriptionDao()(dbExecutionContext, AutoSession)
   val subscriptionService = new SubscriptionService(subscriptionDao)

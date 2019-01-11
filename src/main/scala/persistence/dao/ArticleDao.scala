@@ -1,48 +1,28 @@
 package persistence.dao
 
-import persistence.model.Article
 import persistence.model.Provider.Provider
-import scalikejdbc._
+import persistence.model.{Article, ArticleTable}
+import slick.dbio.Effect.{Read, Write}
+import slick.dbio.{DBIOAction, NoStream}
+import slick.jdbc.PostgresProfile.api._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class ArticleDao()
-                (implicit ec: ExecutionContext,
-                 session: DBSession) {
+                (implicit ec: ExecutionContext) {
 
-  import scalikejdbc.{SQLSyntax => sql}
+  import ArticleTable._
 
-  def find(text: String, provider: Provider): Future[Option[Article]] = Future {
-    val a = Article.syntax("a")
-    DB.readOnly {implicit session =>
-      withSQL {
-        select
-          .from(Article as a)
-          .where
-          .eq(a.searchText, text)
-          .and
-          .eq(a.provider, provider.id)
-      }
-    }.map(Article(_)).single().apply()
+  def find(text: String, provider: Provider): DBIOAction[Option[Article], NoStream, Read] = {
+    ArticleTable.articles
+      .filter(_.searchText === text.bind)
+      .filter(_.provider === provider.bind)
+      .result
+      .headOption
   }
 
-  def save(searchText: String, content: String, provider: Provider): Future[Unit] = {
-    Future {
-      DB.localTx { implicit session =>
-        withSQL {
-          insert.into(Article).values(searchText, content, provider.id)
-        }.execute()
-      }.apply()
-    }
-  }
-
-  def count(): Future[Int] = Future {
-    val a = Article.syntax("a")
-    withSQL(select(sql.count).from(Article as a))
-      .map(rs => rs.int(1))
-      .single()
-      .apply()
-      .getOrElse(0)
+  def save(article: Article): DBIOAction[Int, NoStream, Write] = {
+    ArticleTable.articles += article
   }
 
 }

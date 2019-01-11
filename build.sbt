@@ -18,5 +18,6 @@ libraryDependencies ++= Seq(
   "com.github.pureconfig" %% "pureconfig" % "0.9.1",
   "org.apache.commons" % "commons-text" % "1.4",
   "org.typelevel" %% "cats-core" % "1.4.0",
-  "org.liquibase" % "liquibase-core" % "3.6.2"
+  "org.liquibase" % "liquibase-core" % "3.6.2",
+  "com.typesafe.slick" %% "slick" % "3.2.3"
 )
