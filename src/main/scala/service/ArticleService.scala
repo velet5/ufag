@@ -14,14 +14,10 @@ class ArticleService(
   implicit ec: ExecutionContext
 ) {
 
-  def find(text: String, provider: Provider): Future[Option[Article]] = {
+  def find(text: String, provider: Provider): Future[Option[Article]] =
     db.run(articleDao.find(text, provider))
-  }
 
-  def save(searchText: String, content: String, provider: Provider): Future[Int] = {
-    val article = Article(searchText, content, provider)
-    
-    db.run(articleDao.save(article))
-  }
+  def save(searchText: String, content: String, provider: Provider): Future[Int] =
+    db.run(articleDao.save(Article(searchText, content, provider)))
 
 }

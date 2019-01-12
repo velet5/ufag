@@ -18,10 +18,7 @@ final case class AskReply(userId: Long, replyMessageId: Long, text: String) exte
 final case class RuDefine(chatId: ChatId, word: String) extends Command
 final case class Malformed(chatId: ChatId, text: String) extends Command
 final case class Unknown(chatId: ChatId) extends Command
-final case class Subscribe(chatId: ChatId) extends Command
-final case class Unsubscribe(chatId: ChatId) extends Command
 case object CannotParse extends Command
-
 
 trait UpdateParser[C <: Command] {
   def parse(update: Update): Option[Either[Malformed, C]]
@@ -38,9 +35,7 @@ class Commands(ufagProperties: UfagProperties) {
     simpleCommandParser("/start", Start),
     simpleCommandParser("/stat", Statistics),
     withMessageId("/ask", Ask),
-    new AskReplyParser(ufagProperties),
-    simpleCommandParser("/sub", Subscribe),
-    simpleCommandParser("/unsub", Unsubscribe)
+    new AskReplyParser(ufagProperties)
   )
 
   def parse(update: Update): Command = {

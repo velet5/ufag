@@ -2,14 +2,16 @@ package persistence.model
 
 import java.time.ZonedDateTime
 
-import scalikejdbc.WrappedResultSet
+import cats.syntax.option.catsSyntaxOptionId
+import slick.jdbc.PostgresProfile.api.{Query => _, _}
 
 case class Query(chatId: Long, text: String, time: ZonedDateTime, messageId: Long)
 
-object Query extends scalikejdbc.SQLSyntaxSupport[Query] {
+class QueryTable(tag: Tag) extends Table[Query](tag, "ufag".some, "queries") {
+  def chatId = column[Long]("chat_id")
+  def text = column[String]("text")
+  def time = column[ZonedDateTime]("time")
+  def messageId = column[Long]("message_id")
 
-  override def schemaName: Option[String] = Some("ufag")
-  override val tableName = "queries"
-
-  def apply(rs: WrappedResultSet): Query = Query(rs.long(1), rs.string(2), rs.zonedDateTime(3), rs.long(4))
+  override def * = (chatId, text, time, messageId) <> (Query.tupled, Query.unapply)
 }

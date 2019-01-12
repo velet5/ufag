@@ -1,12 +1,14 @@
 package persistence.model
 
-import scalikejdbc.WrappedResultSet
+import cats.syntax.option.catsSyntaxOptionId
+import slick.jdbc.PostgresProfile.api._
 
 case class Asking(chatId: Long, originalMessageId: Long, ownerMessageId: Long)
 
-object Asking extends scalikejdbc.SQLSyntaxSupport[Asking] {
-  override def schemaName: Option[String] = Some("ufag")
-  override def tableName: String = "asking" // yeah, lame
+class AskingTable(tag: Tag) extends Table[Asking](tag, "ufag".some, "asking") {
+  def chatId = column[Long]("chat_id")
+  def originalMessageId = column[Long]("original_message_id")
+  def ownerMessageId = column[Long]("owner_message_id")
 
-  def apply(rs: WrappedResultSet): Asking = Asking(rs.long(1), rs.long(2), rs.long(3))
+  override def * = (chatId, originalMessageId, ownerMessageId) <> (Asking.tupled, Asking.unapply)
 }

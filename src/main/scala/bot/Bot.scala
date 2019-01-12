@@ -18,9 +18,7 @@ class BotImpl(commands: Commands,
               startHandler: CommandHandler[Start],
               statisticsHandler: CommandHandler[Statistics],
               askHandler: CommandHandler[Ask],
-              askReplyHandler: CommandHandler[AskReply],
-              subscribeHandler: CommandHandler[Subscribe],
-              unsubscribeHandler: CommandHandler[Unsubscribe]) extends Bot {
+              askReplyHandler: CommandHandler[AskReply]) extends Bot {
 
   def process(update: Update): Future[Outcome] = {
     val command = commands.parse(update)
@@ -41,8 +39,6 @@ class BotImpl(commands: Commands,
       case statictics: Statistics => statisticsHandler.handle(statictics)
       case ask: Ask => askHandler.handle(ask)
       case askReply: AskReply => askReplyHandler.handle(askReply)
-      case subscribe: Subscribe => subscribeHandler.handle(subscribe)
-      case unsubscribe: Unsubscribe => unsubscribeHandler.handle(unsubscribe)
       case malformed: Malformed => Future.successful(SendMessage(malformed.chatId, malformed.text))
       case Unknown(chatId) => Future.successful(SendMessage(chatId, "Неизвестная команда"))
       case CannotParse => Future.successful(CannotHandle)

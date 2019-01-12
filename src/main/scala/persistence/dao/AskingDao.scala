@@ -1,44 +1,23 @@
 package persistence.dao
 
-import org.slf4j.LoggerFactory
+import persistence.Tables
 import persistence.model.Asking
-import scalikejdbc._
+import slick.dbio.Effect.{Read, Write}
+import slick.jdbc.PostgresProfile.api._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class AskingDao()
-               (implicit ec: ExecutionContext,
-                session: DBSession) {
+               (implicit ec: ExecutionContext) {
 
-  def find(chatId: Long, ownerMessageId: Long): Future[Option[Asking]] = {
-    val a = Asking.syntax("a")
-    val tried = Future {
-      DB.readOnly {implicit session =>
-        withSQL {
-          select
-            .from(Asking as a)
-            .where.eq(a.chatId, chatId)
-            .and.eq(a.ownerMessageId, ownerMessageId)
-        }
-      }.map(Asking(_)).single().apply()
-    }
+  def find(chatId: Long, ownerMessageId: Long): DBIOAction[Option[Asking], NoStream, Read] =
+    Tables.askings
+      .filter(_.chatId === chatId.bind)
+      .filter(_.ownerMessageId === ownerMessageId.bind)
+      .result
+      .headOption
 
-    tried.failed.foreach(log.error("asking error", _))
-
-    tried
-  }
-
-
-  def save(chatId: Long, originalMessageId: Long, ownerMessageId: Long): Future[Unit] = {
-    Future {
-      DB.localTx { implicit session =>
-        withSQL {
-          insert.into(Asking).values(chatId, originalMessageId, ownerMessageId)
-        }.execute()
-      }.apply()
-    }
-  }
-
-  private val log = LoggerFactory.getLogger(getClass)
+  def save(asking: Asking): DBIOAction[Int, NoStream, Write] =
+    Tables.askings += asking
 
 }
