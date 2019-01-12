@@ -24,6 +24,7 @@ class QueryDao()
       .filter(_.chatId === chatId.bind)
       .filter(_.text === text.bind)
       .filter(_.time > thirtyDaysAgo.bind)
+      .sortBy(_.time.desc)
       .result
       .headOption
   }
