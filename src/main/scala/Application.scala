@@ -8,8 +8,6 @@ object Application extends Wiring {
   def main(args: Array[String]): Unit = {
     log.info("Application is starting up")
 
-    db.init()
-
     val server = new Server(port, updateHandler)
     server.start()
 

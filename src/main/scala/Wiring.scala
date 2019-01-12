@@ -20,10 +20,14 @@ trait Wiring extends Clients with Core {
   implicit val actorSystem: ActorSystem = ActorSystem("my-system")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   protected val dbExecutionContext: ExecutionContext =
-
     ExecutionContext.fromExecutor(new ThreadPoolExecutor(4, 8, 1L, TimeUnit.SECONDS, new LinkedBlockingQueue(100)))
 
   val db = new Db(properties.postgres)
+
+  locally {
+    db.init()
+  }
+
   val port: Int = properties.ufag.port
 
   val telegram = new TelegramImpl(properties.telegram.token, restClient, mapper)
