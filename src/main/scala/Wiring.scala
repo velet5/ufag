@@ -1,13 +1,15 @@
+import Application.{actorSystem, log, port, server, updateHandler}
+import telegram.{TelegramImpl, UpdateHandlerImpl}
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import bot.handler._
 import bot.{BotImpl, Commands}
+import http.Server
 import lingvo.{LingvoClient, LingvoProcessor, LingvoService}
 import oxford.{OxfordClient, OxfordFormatter, OxfordServiceImpl}
 import persistence.Db
 import persistence.dao.{ArticleDao, AskingDao, QueryDao}
-import service.{ArticleService, AskingService, QueryService}
-import telegram.{TelegramImpl, UpdateHandlerImpl}
+import service.{ArticleService, AskingService, Monster, QueryService}
 
 import scala.concurrent.ExecutionContext
 
@@ -16,6 +18,10 @@ trait Wiring extends Clients with Core {
   implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
   implicit val actorSystem: ActorSystem = ActorSystem("my-system")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
+
+  sys.addShutdownHook(() => {
+    actorSystem.terminate()
+  })
 
   val db = new Db(properties.postgres)
 
@@ -53,5 +59,9 @@ trait Wiring extends Clients with Core {
     new AskReplyHandler(askingService, telegram))
 
   val updateHandler = new UpdateHandlerImpl(telegram, bot)
+
+  val server = new Server(port, updateHandler)
+
+  val monster = new Monster(telegram, properties.ufag)
 
 }
