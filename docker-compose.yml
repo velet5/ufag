@@ -1,0 +1,15 @@
+version: '3'
+services:
+  ufag:
+    image: "velet5/ufag:latest"
+    ports:
+      - 8080:8080
+    volumes:
+      - "./application.conf:/application.conf"
+      - "./logs:/logs"
+  postgres:
+    image: "postgres:10.6-alpine"
+    environment:
+      POSTGRES_USER: "xxx"
+      POSTGRES_PASSWORD: "xxx"
+      POSTGRES_DB: "ufag"

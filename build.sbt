@@ -38,7 +38,7 @@ dockerfile in docker := {
 
   new Dockerfile {
     // Base image
-    from("andreptb/oracle-java:8") // fixme migrate to own docker image
+    from("openjdk:8-stretch") // fixme migrate to own docker image
     // Add all files on the classpath
     add(classpath.files, "/app/")
     // Add the JAR file
