@@ -24,7 +24,7 @@ scp \
 # UPLOAD restart script to remote host
 scp \
     -o StrictHostKeyChecking=no \
-    -i $HOME/.ssh/deploy_rsa
+    -i $HOME/.ssh/deploy_rsa \
     $HOME/build/velet5/ufag/scripts/restart.sh ${REMOTE_HOME}/ufag/
 
 # FIXING permissions
