@@ -1,30 +1,40 @@
 #!/usr/bin/env bash
 
-cd ~/ufag
+REMOTE_HOME=${REMOTE_USERNAME}@${HOST}:/home/${REMOTE_USERNAME}
 
-UFAG_PID_FILE=ufag.pid
-UFAG_JAR=$(ls dist | sort | tail -n1)
-UFAG_OLD_PID=$(cat ${UFAG_PID_FILE})
+# LOCAL build artifact
+UFAG_JAR=$HOME/build/velet5/ufag/target/scala-2.12/ufag-assembly-0.1.jar
+# REMOTE path of the artifact
+UFAG_JAR_DESTINATION=${REMOTE_HOME}/ufag/dist/ufag-$(date +%Y-%m-%d-%H-%M-%S).jar
 
-# REMOVE old dists
-# storing only 5 last ones (to be able to rollback to one manually).
+# DECODING ssh private key
+echo "${SSH_PRIVATE_KEY_BASE64_ENCODED}" | base64 --decode > $HOME/.ssh/deploy_rsa
 
-cd ./dist
-rm $(ls | head -n -5)
-cd ..
+# SETTING up ssh key
+chmod 0600 $HOME/.ssh/deploy_rsa
+eval `ssh-agent`
+ssh-add $HOME/.ssh/deploy_rsa
 
-# APPLY sql migrations
+# UPLOAD artifact to remote host
+scp \
+    -o StrictHostKeyChecking=no \
+    -i $HOME/.ssh/deploy_rsa \
+    ${UFAG_JAR} ${UFAG_JAR_DESTINATION}
 
-java -cp dist/${UFAG_JAR} -Dconfig.file=${HOME}/ufag/application.conf LiquibaseRunner
+# UPLOAD restart script to remote host
+scp \
+    -o StrictHostKeyChecking=no \
+    -i $HOME/.ssh/deploy_rsa
+    $HOME/build/velet5/ufag/scripts/restart.sh ${REMOTE_HOME}/ufag/
 
-# SEND kill signal to current bot
-kill ${UFAG_OLD_PID}
+# FIXING permissions
+ssh \
+    -o StrictHostKeyChecking=no \
+    -i $HOME/.ssh/deploy_rsa \
+    ${REMOTE_USERNAME}@${HOST} "chmod u+x /home/${REMOTE_USERNAME}/ufag/restart.sh"
 
-# WAIT for process to exit
-tail --pid=${UFAG_OLD_PID} -f /dev/null
-
-# START new bot
-java -jar -Dconfig.file=${HOME}/ufag/application.conf dist/${UFAG_JAR} &
-
-# SAVE pid of current launching
-echo -n $! > ${UFAG_PID_FILE}
+# EXECUTING restarting script
+ssh \
+    -o StrictHostKeyChecking=no \
+    -i $HOME/.ssh/deploy_rsa \
+    ${REMOTE_USERNAME}@${HOST} "cd /home/${REMOTE_USERNAME}/ufag/; nohup ./restart.sh > ufag.log 2>&1"

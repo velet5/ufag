@@ -3,14 +3,13 @@
 # ENTER the app directory
 cd ~/ufag
 
-
 # CREATE needed directories
 mkdir -p images
 
 cd images
 
 UFAG_IMAGE_TAR=$(ls | tail -n1)
-UFAG_TAG=$(sed -e 's/^ufage//' -e 's/\.tar$//' <<<"${UFAG_IMAGE_TAR}")
+UFAG_TAG=$(sed -e 's/^ufag-//' -e 's/\.tar$//' <<<"${UFAG_IMAGE_TAR}")
 # REMOVE old images
 rm $(ls | head -n -5)
 cd ..

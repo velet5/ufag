@@ -12,15 +12,9 @@ branches:
 script:
   - sbt assembly
 
-after_success:
- - echo "$SSH_PRIVATE_KEY_BASE64_ENCODED" | base64 --decode > $HOME/.ssh/deploy_rsa
- - chmod 0600 $HOME/.ssh/deploy_rsa
- - eval `ssh-agent`
- - ssh-add $HOME/.ssh/deploy_rsa
- - scp -o StrictHostKeyChecking=no -i $HOME/.ssh/deploy_rsa $HOME/build/velet5/ufag/target/scala-2.12/ufag-assembly-0.1.jar $REMOTE_USERNAME@$HOST:/home/$REMOTE_USERNAME/ufag/dist/ufag-$(date +%Y-%m-%d-%H-%M-%S).jar
- - scp -o StrictHostKeyChecking=no -i $HOME/.ssh/deploy_rsa $HOME/build/velet5/ufag/scripts/deploy.sh $REMOTE_USERNAME@$HOST:/home/$REMOTE_USERNAME/ufag/
- - ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/deploy_rsa $REMOTE_USERNAME@$HOST "chmod u+x /home/$REMOTE_USERNAME/ufag/deploy.sh"
- - ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/deploy_rsa $REMOTE_USERNAME@$HOST "cd /home/$REMOTE_USERNAME/ufag/; nohup ./deploy.sh > ufag.log 2>&1"
+deploy:
+  provider: script
+  script: scripts/deploy.sh
 
 cache:
   directories:
