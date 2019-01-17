@@ -1,23 +1,40 @@
 #!/usr/bin/env bash
 
-# ENTER the app directory
-cd ~/ufag
+REMOTE_HOME=${REMOTE_USERNAME}@${HOST}:/home/${REMOTE_USERNAME}
 
-# CREATE needed directories
-mkdir -p images
+# DECODING ssh private key
+echo "${SSH_PRIVATE_KEY_BASE64_ENCODED}" | base64 --decode > $HOME/.ssh/deploy_rsa
 
-cd images
+# SETTING up ssh key
+chmod 0600 $HOME/.ssh/deploy_rsa
+eval `ssh-agent`
+ssh-add $HOME/.ssh/deploy_rsa
 
-UFAG_IMAGE_TAR=$(ls | tail -n1)
-UFAG_TAG=$(sed -e 's/^ufag-//' -e 's/\.tar$//' <<<"${UFAG_IMAGE_TAR}")
-# REMOVE old images
-rm $(ls | head -n -5)
-cd ..
+IMAGE_TAG=$(docker images | grep 'velet5/ufag' | grep -P '\d{8}-\d{6}' | awk '{ print $2 }')
+IMAGE_FILE=ufag-${IMAGE_TAG}.tar
 
-UFAG_CONTAINER_ID=$(cat ufag.container-id)
+docker save -o ${IMAGE_FILE} velet5/ufag:${IMAGE_TAG}
 
-# LOAD image
-sudo docker load -i images/${UFAG_IMAGE_TAR}
+# UPLOAD artifact to remote host
+scp \
+    -o StrictHostKeyChecking=no \
+    -i $HOME/.ssh/deploy_rsa \
+    ${IMAGE_FILE} ${REMOTE_HOME}/ufag/images/
 
-sudo docker stop ${UFAG_CONTAINER_ID}
-sudo docker run -d --network=ufag-network -v $HOME/ufag/application.conf:application.conf -v $HOME/ufag/logs:/logs -p8080:8080 velet5/ufag:${UFAG_TAG} > ufag.container-id
+# UPLOAD restart script to remote host
+scp \
+    -o StrictHostKeyChecking=no \
+    -i $HOME/.ssh/deploy_rsa \
+    $HOME/build/velet5/ufag/scripts/docker-restart.sh ${REMOTE_HOME}/ufag/
+
+# FIXING permissions
+ssh \
+    -o StrictHostKeyChecking=no \
+    -i $HOME/.ssh/deploy_rsa \
+    ${REMOTE_USERNAME}@${HOST} "chmod u+x /home/${REMOTE_USERNAME}/ufag/docker-restart.sh"
+
+# EXECUTING restarting script
+ssh \
+    -o StrictHostKeyChecking=no \
+    -i $HOME/.ssh/deploy_rsa \
+    ${REMOTE_USERNAME}@${HOST} "cd /home/${REMOTE_USERNAME}/ufag/; nohup ./docker-restart.sh > ufag.log 2>&1"

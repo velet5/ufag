@@ -10,11 +10,11 @@ branches:
     - master
    
 script:
-  - sbt assembly
+  - sbt docker
 
 deploy:
   provider: script
-  script: bash scripts/deploy.sh
+  script: bash scripts/docker-deploy.sh
   skip_cleanup: true
 
 cache:
