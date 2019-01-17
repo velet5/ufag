@@ -28,7 +28,7 @@ class Server(port: Int, updateHandler: UpdateHandler)
 
   def start(): Unit = {
     if (bindingFuture.isEmpty) {
-      bindingFuture = Http().bindAndHandle(route, "localhost", port).some
+      bindingFuture = Http().bindAndHandle(route, "0.0.0.0", port).some
     }
   }
 
