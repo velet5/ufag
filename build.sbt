@@ -44,13 +44,13 @@ dockerfile in docker := {
     // Add the JAR file
     add(jarFile, jarTarget)
     // On launch run Java with the classpath and the main class
-    entryPoint("java", "-cp", classpathString, mainclass)
+    entryPoint("java", "-Dconfig.file=application.conf", "-cp", classpathString, mainclass)
   }
 }
 
 imageNames in docker := {
   val now = LocalDateTime.now()
-  val formatter = DateTimeFormatter.ofPattern("yyyymmdd-HHMMss")
+  val formatter = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")
   val tagValue = formatter.format(now)
 
   Seq(
