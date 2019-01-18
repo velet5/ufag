@@ -34,19 +34,26 @@ class LingvoService(
 
   // private
 
-  private def process(word: String, text: String, provider: Provider): Future[Either[String, String]] =
+  private def process(word: String, text: String, provider: Provider): Future[Either[String, String]] = {
+    val requestType = provider match {
+      case Provider.Lingvo => TranslationRequest
+      case Provider.LingvoRu => DefinitionRequest
+      case _ => throw new RuntimeException(s"wrong provider $provider")
+    }
+
     processor.process(text).fold({
       case EmptyResult =>
         lingvoClient
-          .getCorrections(word)
+          .getCorrections(word, requestType)
           .map(_.fold(emptyResult)(seq => formatCorrections(word, seq)))
       case other =>
         Future.successful(Left(formatError(other)))
     },
-    s => {
-      articleService.save(word, text, provider)
-      Future.successful(Right(s))
-    })
+      s => {
+        articleService.save(word, text, provider)
+        Future.successful(Right(s))
+      })
+  }
 
   private def formatCorrections(word: String, seq: Seq[String]): Either[String, String] =
     Left("Возможно вы имели в виду: \n" +

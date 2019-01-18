@@ -36,8 +36,8 @@ class LingvoClient(
       .flatMap(_.fold(define(word))(Future successful _.content))
   }
 
-  def getCorrections(word: String): Future[Option[Seq[String]]] =
-    authorizedGet(Uri(properties.serviceUrl + "/api/v1/Suggests" + buildQuery(word)))
+  def getCorrections(word: String, requestType: RequestType): Future[Option[Seq[String]]] =
+    authorizedGet(Uri(properties.serviceUrl + "/api/v1/Suggests" + buildQuery(word, requestType)))
       .map(body => Try(mapper.readValue[Array[String]](body, classOf[Array[String]])).toOption)
       .map(_.map(_.toSeq))
 
@@ -51,13 +51,21 @@ class LingvoClient(
     ))
 
   private def translate(word: String): Future[String] =
-    authorizedGet(Uri(properties.serviceUrl + "/api/v1/Translation" + buildQuery(word)))
+    authorizedGet(Uri(properties.serviceUrl + "/api/v1/Translation" + buildQuery(word, TranslationRequest)))
 
-  private def buildQuery(word: String): String =
-    if (isCyrillic(word))
-      s"?text=${encode(word)}&srcLang=$Russian&dstLang=$English"
-    else
-      s"?text=${encode(word)}&srcLang=$English&dstLang=$Russian"
+  private def buildQuery(word: String, requestType: RequestType): String =
+    requestType match {
+      case TranslationRequest =>
+        if (isCyrillic(word))
+          s"?text=${encode(word)}&srcLang=$Russian&dstLang=$English"
+        else
+          s"?text=${encode(word)}&srcLang=$English&dstLang=$Russian"
+      case DefinitionRequest =>
+        if (isCyrillic(word))
+          s"?text=${encode(word)}&srcLang=$Russian&dstLang=$Russian"
+        else
+          s"?text=${encode(word)}&srcLang=$English&dstLang=$English"
+    }
 
   private def authorizedGet(uri: Uri): Future[String] = {
     def go(token: String) =

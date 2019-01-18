@@ -26,6 +26,10 @@ case class ArticleNode(text: String,
                        markup: Seq[ArticleNode],
                        isOptional: Boolean)
 
+sealed trait RequestType
+case object DefinitionRequest extends RequestType
+case object TranslationRequest extends RequestType
+
 object NodeType {
   val Comment = "Comment"
   val Paragraph = "Paragraph"
