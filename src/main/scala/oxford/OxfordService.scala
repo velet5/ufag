@@ -1,5 +1,8 @@
 package oxford
 
+import org.slf4j.LoggerFactory
+import oxford.exception.FailedRequestException
+
 import scala.concurrent.{ExecutionContext, Future}
 
 trait OxfordService {
@@ -13,7 +16,18 @@ class OxfordServiceImpl(oxfordClient: OxfordClient,
   def define(rawText: String): Future[String] = {
     oxfordClient.getDefinition(rawText)
       .map(formatter.format)
-      .recover { case _ => "*Ошибка обработки*" }
+      .recover {
+        case ex: FailedRequestException if ex.statusCode == 404 =>
+          "*Слово не найдено*"
+
+        case ex: Throwable =>
+          log.error("Error processing oxford request", ex)
+          "*Ошибка обработки*"
+      }
   }
+
+  // private
+
+  private val log = LoggerFactory.getLogger(this.getClass)
 
 }

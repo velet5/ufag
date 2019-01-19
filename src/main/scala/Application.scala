@@ -17,6 +17,4 @@ object Application extends Wiring {
     })
   }
 
-  // private
-
 }
