@@ -31,5 +31,5 @@ docker run \
 # REMOVE old images
 docker images --filter "before=velet5/ufag:${UFAG_TAG}" | \
     grep 'velet5/ufag' | \
-    awk "{ print $1 }" | \
+    awk "{ print $3 }" | \
     xargs -r docker rmi -f
