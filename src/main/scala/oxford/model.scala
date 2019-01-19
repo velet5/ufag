@@ -1,6 +1,6 @@
 package oxford
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.{JsonIgnoreProperties, JsonProperty}
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 case class OxfordResponse(results: Seq[Result])
@@ -42,5 +42,10 @@ case class GrammaticalFeature(text: String, `type`: String)
 @JsonIgnoreProperties(ignoreUnknown = true)
 case class Sense(
   definitions: Option[Seq[String]],
+  @JsonProperty("short_definitions")
   shortDefinitions: Option[Seq[String]],
-  subsenses: Option[Seq[Sense]])
+  subsenses: Option[Seq[Sense]],
+  crossReferences: Option[Seq[CrossReference]])
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+case class CrossReference(text: String, `type`: String)

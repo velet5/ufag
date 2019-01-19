@@ -5,66 +5,69 @@ import util.RomanNumbers
 class OxfordFormatter {
 
   def format(oxfordResponse: OxfordResponse): String = {
-    implicit val sb: StringBuilder = new StringBuilder
-
-    oxfordResponse.results.headOption.foreach {result =>
-      if (result.lexicalEntries.size > 1) {
-        result.lexicalEntries.zipWithIndex.foreach {case (entry, index) => printLexicalEntry(entry, Some(index + 1))}
-      } else {
-        result.lexicalEntries.headOption.foreach(printLexicalEntry(_))
+    oxfordResponse.results
+      .headOption
+      .map {result =>
+        if (result.lexicalEntries.size > 1) {
+          result.lexicalEntries
+            .zipWithIndex.map {case (entry, index) => formatLexicalEntry(entry, Some(index + 1))}
+        } else {
+          result.lexicalEntries.map(formatLexicalEntry(_))
+        }
       }
-    }
-
-    sb.toString()
+      .map(_.mkString("\n\n"))
+      .getOrElse("")
   }
 
   // private
 
-  private def printLexicalEntry(lexicalEntry: LexicalEntry, index: Option[Int] = None)
-                               (implicit sb: StringBuilder): Unit = {
-    sb append "*" append lexicalEntry.text append "* (" append lexicalEntry.lexicalCategory.toLowerCase append ") \n"
-    lexicalEntry.pronunciations.foreach {pronunciations =>
-      if (pronunciations.nonEmpty) {
-        sb append pronunciations.map("*[" + _.phoneticSpelling + "]*").mkString(" / ") append "\n"
-      }
+  private def formatLexicalEntry(lexicalEntry: LexicalEntry, index: Option[Int] = None): String = {
+    val title = s"*${lexicalEntry.text}* (${lexicalEntry.lexicalCategory.toLowerCase})\n"
+    val pronunciation = lexicalEntry.pronunciations.map { pronunciations =>
+      pronunciations.map("*[" + _.phoneticSpelling + "]*").mkString("", " / ", "\n")
     }
 
     val entries = lexicalEntry.entries
-    if (entries.size > 1)
-      entries.zipWithIndex.foreach { case (entry, i) => printEntry(entry, Some(i + 1)) }
-    else
-      entries.foreach(printEntry(_))
-
-    sb.append("\n")
-  }
-
-  private def printEntry(entry: Entry, index: Option[Int] = None)
-                        (implicit sb: StringBuilder): Unit = {
-    index.foreach(i => sb append "*" append RomanNumbers(i) append ".*\n")
-    entry.senses.zipWithIndex.foreach { case (sense, i) => printSense(sense, index = Some(i + 1)) }
-  }
-
-  private def printSense(sense: Sense, index: Option[Int] = None, parentIndex: Option[Int] = None)
-                        (implicit sb: StringBuilder): Unit = {
-    parentIndex match {
-      case Some(parent) =>
-        index.foreach(sb append "_" append parent append "." append _ append ")_ ")
-      case None =>
-        index.foreach(sb append _ append ". ")
-    }
-
-    sense.definitions.foreach { definitions =>
-      if (definitions.size > 1)
-        sense.definitions.zipWithIndex.foreach { case (definition, i) =>
-          sb append "• " append definition append "\n"
-        }
+    val entryStrings =
+      if (entries.size > 1)
+        entries.zipWithIndex.map { case (entry, i) => formatEntry(entry, Some(i + 1)) }
       else
-        definitions.foreach(sb append _ append "\n")
+        entries.map(formatEntry(_))
+
+    title + pronunciation.getOrElse("") + entryStrings.mkString("\n\n")
+  }
+
+  private def formatEntry(entry: Entry, index: Option[Int] = None): String = {
+    val indexStr = index.map(i => s"*${RomanNumbers(i)}.*\n").getOrElse("")
+    val senses = entry.senses
+      .zipWithIndex
+      .map { case (sense, i) => formatSense(sense, index = Some(i + 1)) }
+      .mkString("\n")
+
+    indexStr + senses
+  }
+
+  private def formatSense(sense: Sense, index: Option[Int] = None, parentIndex: Option[Int] = None): String = {
+    val indexStr = parentIndex.fold(index.map(i => s"$i. "))(parent => index.map(i => s"_$parent.${i})_ "))
+    val maybeCrossReferences = sense.crossReferences.map(_.map(reference => s"_${reference.`type`}_ *${reference.text}* ").mkString(", "))
+
+    val maybeDefinitions = sense.definitions.map {
+      case Seq(single) =>
+        single.mkString("")
+      case several =>
+        several.map("• " + _).mkString("\n")
+    }.orElse {
+      val references = sense.crossReferences.toSeq.flatMap(_.map(_.text))
+      sense.shortDefinitions.map(_.filterNot(references.contains).mkString("\n"))
     }
 
-    sense.subsenses.foreach {senses =>
-      senses.zipWithIndex.foreach { case (s, i) => printSense(s, index = Some(i + 1), parentIndex = index)}
+    val maybeSubsenses = sense.subsenses.map {
+      _.zipWithIndex
+        .map { case (s, i) => formatSense(s, index = Some(i + 1), parentIndex = index) }
+        .mkString("\n", "\n", "")
     }
+
+    Seq(indexStr, maybeCrossReferences, maybeDefinitions, maybeSubsenses).flatten.mkString("")
   }
 
 }
