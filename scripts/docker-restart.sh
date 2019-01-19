@@ -16,7 +16,7 @@ cd ..
 docker load -i images/${UFAG_IMAGE_TAR}
 
 # STOP current container
-docker ps  | grep 'velet5/ufag' | awk "{ print $1 }" | xargs -r docker stop
+docker ps  | grep 'velet5/ufag' | awk '{ print $1 }' | xargs -r docker stop
 
 # RUN new container
 docker run \
@@ -31,5 +31,5 @@ docker run \
 # REMOVE old images
 docker images --filter "before=velet5/ufag:${UFAG_TAG}" | \
     grep 'velet5/ufag' | \
-    awk "{ print $3 }" | \
+    awk '{ print $3 }' | \
     xargs -r docker rmi -f
