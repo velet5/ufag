@@ -5,7 +5,10 @@ final case class Configuration(
   oxford: OxfordProperties,
   ufag: UfagProperties,
   postgres: PostgresProperties,
-  telegram: TelegramProperties)
+  telegram: TelegramProperties,
+  sentry: SentryProperties)
+
+final case class SentryProperties(dsn: String)
 
 final case class LingvoProperties(apiKey: String, serviceUrl: String)
 

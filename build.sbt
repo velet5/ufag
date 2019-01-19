@@ -25,7 +25,8 @@ libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-text" % "1.4",
   "org.typelevel" %% "cats-core" % "1.4.0",
   "org.liquibase" % "liquibase-core" % "3.6.2",
-  "com.typesafe.slick" %% "slick" % "3.2.3"
+  "com.typesafe.slick" %% "slick" % "3.2.3",
+  "io.sentry" % "sentry" % "1.7.16"
 )
 
 dockerfile in docker := {

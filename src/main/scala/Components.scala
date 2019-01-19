@@ -13,7 +13,7 @@ import service.{ArticleService, AskingService, Monster, QueryService}
 
 import scala.concurrent.ExecutionContext
 
-trait Wiring extends Clients with Core {
+trait Components extends Clients with Core {
 
   implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
   implicit val actorSystem: ActorSystem = ActorSystem("my-system")

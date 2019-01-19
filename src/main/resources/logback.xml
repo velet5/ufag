@@ -13,7 +13,15 @@
         <immediateFlush>true</immediateFlush>
     </appender>
 
+    <!-- Configure the Sentry appender, overriding the logging threshold to the WARN level -->
+    <appender name="SENTRY" class="io.sentry.logback.SentryAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+    </appender>
+
     <root level="info">
         <appender-ref ref="DAYFILE" />
+        <appender-ref ref="SENTRY" />
     </root>
 </configuration>
