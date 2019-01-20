@@ -15,12 +15,16 @@ case class Result(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 case class LexicalEntry(
-  derivatives: Seq[Any],
+  @JsonProperty("derivativeOf")
+  derivatives: Option[Seq[Derivative]],
   language: String,
   lexicalCategory: String,
   pronunciations: Option[Seq[Pronunciation]],
   text: String,
   entries: Seq[Entry])
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+case class Derivative(text: String)
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 case class Pronunciation(

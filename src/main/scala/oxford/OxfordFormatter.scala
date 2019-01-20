@@ -34,7 +34,14 @@ class OxfordFormatter {
       else
         entries.map(formatEntry(_))
 
-    title + pronunciation.getOrElse("") + entryStrings.mkString("\n\n")
+    val entriesText = entryStrings.filter(_.nonEmpty).mkString("\n\n")
+    val article =
+      if (entriesText.nonEmpty)
+        entriesText
+      else
+        lexicalEntry.derivatives.toSeq.flatMap(_.map(d => s"see *${d.text}*")).mkString("", ", ", " ")
+
+    title + pronunciation.getOrElse("") + article
   }
 
   private def formatEntry(entry: Entry, index: Option[Int] = None): String = {
@@ -67,7 +74,12 @@ class OxfordFormatter {
         .mkString("\n", "\n", "")
     }
 
-    Seq(indexStr, maybeCrossReferences, maybeDefinitions, maybeSubsenses).flatten.mkString("")
+    val parts = Seq(maybeCrossReferences, maybeDefinitions, maybeSubsenses).flatten
+
+    parts match {
+      case Seq() => ""
+      case nonEmpty => indexStr.getOrElse("") + nonEmpty.mkString("")
+    }
   }
 
 }
