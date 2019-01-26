@@ -1,13 +1,13 @@
-package bot.handler
+package bot.action
 
 import bot.{Outcome, RuDefine, SendMessage}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class RuDefineHandler(li: lingvo.LingvoService)
-                     (implicit ec: ExecutionContext) extends CommandHandler[RuDefine] {
+class RuDefineAction(li: lingvo.LingvoService)
+                     (implicit ec: ExecutionContext) extends CommandAction[RuDefine] {
 
-  override def handle(command: RuDefine): Future[Outcome] =
+  override def run(command: RuDefine): Future[Outcome] =
     li
       .defineRu(command.word)
       .map(_.fold(identity[String], identity[String]))

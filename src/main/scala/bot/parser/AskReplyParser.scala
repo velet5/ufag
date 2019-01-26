@@ -1,10 +1,10 @@
 package bot.parser
 
-import bot.{AskReply, Malformed, UpdateParser}
+import bot.{AskReply, Malformed}
 import configuration.UfagProperties
 import telegram.Update
 
-class AskReplyParser(properties: UfagProperties) extends UpdateParser[AskReply] {
+class AskReplyParser(properties: UfagProperties) extends CommandParser[AskReply] {
   override def parse(update: Update): Option[Either[Malformed, AskReply]] =
     for {
       message <- update.message if message.chat.id == properties.ownerId

@@ -1,10 +1,10 @@
-package bot.handler
+package bot.action
 
 import bot.{Help, Outcome, SendMessage}
 
 import scala.concurrent.Future
 
-private object HelpHandler {
+private object HelpAction {
   val message: String =
     s"""
        |Напишите слово для перевода, на русском или английском.
@@ -19,9 +19,9 @@ private object HelpHandler {
 }
 
 
-class HelpHandler extends CommandHandler[Help] {
-  override def handle(command: Help): Future[Outcome] =
+class HelpAction extends CommandAction[Help] {
+  override def run(command: Help): Future[Outcome] =
     Future.successful {
-      SendMessage(command.chatId, HelpHandler.message)
+      SendMessage(command.chatId, HelpAction.message)
     }
 }

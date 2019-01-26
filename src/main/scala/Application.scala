@@ -3,7 +3,7 @@ import org.slf4j.LoggerFactory
 
 import scala.util.control.NonFatal
 
-object Application extends App with Components {
+object Application extends App with BotWiring {
 
   withErrorLogging {
     onStart()

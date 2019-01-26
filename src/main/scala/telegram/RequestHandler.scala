@@ -10,11 +10,11 @@ import scala.concurrent.ExecutionContext
 import scala.util.Try
 import scala.util.control.NonFatal
 
-trait UpdateHandler {
+trait RequestHandler {
   def handle(update: String): Unit
 }
 
-class UpdateHandlerImpl(telegram: Telegram, bot: Bot)(implicit ec: ExecutionContext) extends UpdateHandler {
+class RequestHandlerImpl(telegram: Telegram, bot: Bot)(implicit ec: ExecutionContext) extends RequestHandler {
 
   def handle(json: String): Unit = {
     log.info(s"Processing $json")

@@ -6,12 +6,12 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
 import cats.syntax.option.catsSyntaxOptionId
 import org.slf4j.LoggerFactory
-import telegram.UpdateHandler
+import telegram.RequestHandler
 
 import scala.concurrent.{ExecutionContext, Future}
 
 
-class Server(port: Int, updateHandler: UpdateHandler)
+class Server(port: Int, updateHandler: RequestHandler)
             (implicit executionContext: ExecutionContext,
                       actorSystem: ActorSystem,
                       actorMaterializer: ActorMaterializer) extends Directives {

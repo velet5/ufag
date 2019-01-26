@@ -1,4 +1,4 @@
-package bot.handler
+package bot.action
 
 import bot.{AskReply, Ignore, Outcome}
 import persistence.model.Asking
@@ -7,11 +7,11 @@ import telegram.{Telegram, TelegramSendMessage}
 
 import scala.concurrent.Future
 
-class AskReplyHandler(askingService: AskingService, telegram: Telegram) extends CommandHandler[AskReply] {
+class AskReplyAction(askingService: AskingService, telegram: Telegram) extends CommandAction[AskReply] {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  override def handle(command: AskReply): Future[Outcome] = {
+  override def run(command: AskReply): Future[Outcome] = {
     def send(asking: Asking) = {
       val message = TelegramSendMessage(command.userId, command.text, replyToMessageId = Some(asking.originalMessageId))
 

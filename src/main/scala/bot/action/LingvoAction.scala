@@ -1,4 +1,4 @@
-package bot.handler
+package bot.action
 
 import bot.{Ignore, Lingvo, Outcome}
 import org.slf4j.LoggerFactory
@@ -9,19 +9,19 @@ import telegram.{Telegram, TelegramSendMessage}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class LingvoHandler(
+class LingvoAction(
   queryService: QueryService,
   telegram: Telegram,
   lingvoService: lingvo.LingvoService
 )(
   implicit ec: ExecutionContext
-) extends CommandHandler[Lingvo] {
+) extends CommandAction[Lingvo] {
 
-  import LingvoHandler._
+  import LingvoAction._
 
   private val log = LoggerFactory.getLogger(getClass)
 
-  override def handle(command: Lingvo): Future[Outcome] = {
+  override def run(command: Lingvo): Future[Outcome] = {
     val text = command.word
     val chatId = command.chatId.value
 
@@ -59,6 +59,6 @@ class LingvoHandler(
   
 }
 
-private object LingvoHandler {
+private object LingvoAction {
   case class Message(message: TelegramSendMessage, remember: Boolean)
 }
