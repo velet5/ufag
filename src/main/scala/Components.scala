@@ -1,14 +1,11 @@
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import bot.action._
-import bot.{BotImpl, Commands}
-import http.Server
 import lingvo.{LingvoClient, LingvoProcessor, LingvoService}
 import oxford.{OxfordClient, OxfordFormatter, OxfordServiceImpl}
 import persistence.Db
 import persistence.dao.{ArticleDao, AskingDao, QueryDao}
 import service.{ArticleService, AskingService, Monster, QueryService}
-import telegram.{TelegramImpl, RequestHandlerImpl}
+import telegram.TelegramImpl
 
 import scala.concurrent.ExecutionContext
 
@@ -42,9 +39,6 @@ trait Components extends Clients with Core {
 
   val lingvoClient = new LingvoClient(properties.lingvo, articleService, restClient, mapper)
   val lingvo = new LingvoService(lingvoClient, new LingvoProcessor(mapper), articleService, mapper)
-
-  val commands = new Commands(properties.ufag)
-
 
   val monster = new Monster(telegram, properties.ufag)
 

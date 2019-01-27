@@ -1,10 +1,15 @@
 import bot._
 import bot.action._
 import bot.handler.UpdateHandler
+import bot.parser.AskReplyParser
+import bot.parser.Parsers._
 import http.Server
 import telegram.RequestHandlerImpl
+import util.TextUtils.isCyrillic
 
-trait BotWiring extends Components with Parsers {
+import scala.concurrent.Future
+
+trait BotWiring extends Components {
 
   val bot = new BotImpl(
     telegram,
@@ -16,45 +21,59 @@ trait BotWiring extends Components with Parsers {
       startHandler,
       statisticsHandler,
       askHandler,
-      askReplyHandler
+      askReplyHandler,
+      unknownCommandHandler
     )
   )
 
   val requestHandler = new RequestHandlerImpl(telegram, bot)
   val server = new Server(port, requestHandler)
 
-  // private
+  /* private*/
 
   private lazy val ruDefineHandler = new UpdateHandler[RuDefine](
-    ruDefineParser, new RuDefineAction(lingvo)
+    definitionParser(_, isCyrillic, RuDefine),
+    new RuDefineAction(lingvo)
   )
 
   private lazy val enDefineHandler = new UpdateHandler[Oxford](
-    enDefineHandler, new OxfordAction(ox)
+    definitionParser(_, !isCyrillic(_), Oxford),
+    new OxfordAction(ox)
   )
 
   private lazy val translationHandler = new UpdateHandler[Lingvo](
-    translationParser, new LingvoAction(queryService, telegram, lingvo)
+    defaultParser(Lingvo),
+    new LingvoAction(queryService, telegram, lingvo)
   )
 
   private lazy val helpHandler = new UpdateHandler[Help](
-    helpParser, new HelpAction
+    simpleCommandParser("/help", Help),
+    new HelpAction
   )
 
   private lazy val startHandler = new UpdateHandler[Start](
-    startParser, new StartAction
+    simpleCommandParser("/start", Start),
+    new StartAction
   )
 
   private lazy val statisticsHandler = new UpdateHandler[Statistics](
-    statParser, new StatisticsAction(queryService)
+    simpleCommandParser("/stat", Statistics),
+    new StatisticsAction(queryService)
   )
 
   private lazy val askHandler = new UpdateHandler[Ask](
-    askParser, new AskAction(properties.ufag, telegram, askingService)
+    withMessageId("/ask", Ask),
+    new AskAction(properties.ufag, telegram, askingService)
   )
 
   private lazy val askReplyHandler = new UpdateHandler[AskReply](
-    askReplyParser, new AskReplyAction(askingService, telegram)
+    new AskReplyParser(properties.ufag),
+    new AskReplyAction(askingService, telegram)
+  )
+
+  private lazy val unknownCommandHandler = new UpdateHandler[Unknown](
+    unknownCommandParser,
+    unknown => Future.successful(SendMessage(unknown.chatId, "Неизвестная команда"))
   )
 
 }
