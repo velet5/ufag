@@ -17,16 +17,18 @@ object Memory {
 
     def format(number: Long): String = {
       val reminder = number % 10
+      val form =
+        if (number >= 5 && number <= 21) {
+          `5-0`
+        } else if (reminder >=2 && reminder <= 4) {
+          `2-4`
+        } else if (reminder == 1) {
+          `1`
+        } else {
+          `5-0`
+        }
 
-      if (number >= 5 && number <= 21) {
-        `5-0`
-      } else if (reminder >=2 && reminder <= 4) {
-        `2-4`
-      } else if (reminder == 1) {
-        `1`
-      } else {
-        `5-0`
-      }
+      s"$number $form"
     }
 
   }
