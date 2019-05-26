@@ -1,9 +1,8 @@
 package wiring
 
 import akka.http.scaladsl.server.Route
-import cats.effect.Sync
+import cats.effect.Effect
 import cats.syntax.functor._
-import conf.Configuration
 import http.TelegramRouter
 
 case class HttpModule(
@@ -12,9 +11,9 @@ case class HttpModule(
 
 object HttpModule {
 
-  def create[F[_]](configuration: Configuration)(implicit F: Sync[F]): F[HttpModule] =
+  def create[F[_]](telegramModule: TelegramModule[F])(implicit F: Effect[F]): F[HttpModule] =
     TelegramRouter
-      .create(configuration.telegram)
+      .create(telegramModule.telegramUpdateHandler)
       .map(router => HttpModule(router.route))
 
 }

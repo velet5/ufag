@@ -29,7 +29,7 @@ object Main extends IOApp {
   private def bindAkkaHttp(
     log: Logger[IO]
   )(
-    application: Application
+    application: Application[IO]
   ): Resource[IO, ServerBinding] = {
     implicit val actorSystem: ActorSystem = application.actorSystem
     implicit val actorMaterializer: ActorMaterializer = application.actorMaterializer
