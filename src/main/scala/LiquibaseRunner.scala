@@ -1,12 +1,13 @@
 import java.sql.{Connection, DriverManager}
 
-import configuration.{Configuration, PostgresProperties}
 import liquibase.changelog.ChangeLogParameters
 import liquibase.database.DatabaseFactory
 import liquibase.database.jvm.JdbcConnection
 import liquibase.parser.ChangeLogParserFactory
 import liquibase.resource.{ClassLoaderResourceAccessor, CompositeResourceAccessor, FileSystemResourceAccessor}
 import liquibase.{Contexts, LabelExpression, Liquibase}
+import old.configuration.{Configuration, PostgresProperties}
+import pureconfig.generic.auto._
 
 object LiquibaseRunner {
 

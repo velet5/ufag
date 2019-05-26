@@ -1,44 +1,41 @@
-import io.sentry.Sentry
-import org.slf4j.LoggerFactory
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import cats.effect.{Resource, Sync}
+import conf.Configuration
+import wiring.HttpModule
 
-import scala.util.control.NonFatal
+case class Application(
+  actorSystem: ActorSystem,
+  actorMaterializer: ActorMaterializer,
+  configuration: Configuration,
+  httpModule: HttpModule,
+)
 
-object Application extends App with BotWiring {
+object Application {
 
-  withErrorLogging {
-    onStart()
-  }
+  def resource[F[_]](implicit F: Sync[F]): Resource[F, Application] =
+    for {
+      actorSystem <- makeActorSystem
+      actorMaterializer <- makeMaterializer(actorSystem)
+      config <- Resource.liftF(Configuration.create)
+      httpModule <- Resource.liftF(HttpModule.create(config))
+    } yield Application(
+      actorSystem,
+      actorMaterializer,
+      config,
+      httpModule
+    )
 
-  // private
+  // internal
 
-  private def onStart()= {
-    // INITIALIZE error-collecting
-    Sentry.init(properties.sentry.dsn)
+  private def makeActorSystem[F[_]](implicit F: Sync[F]): Resource[F, ActorSystem] =
+    Resource.make(F.delay(ActorSystem()))(system => F.delay(system.terminate()))
 
-    log.info("Application is starting up")
-
-    // LISTEN to incoming HTTP-requests
-    server.start()
-
-    // NOTIFY owner that app is started
-    monster.demonstrateSignsOfLiving()
-
-    // SETUP shutdown actions
-    sys.addShutdownHook(() => {
-      log.info("application is stopping")
-      server.stop()
-    })
-  }
-
-  def withErrorLogging(action: => Unit): Unit =
-    try {
-      action
-    } catch {
-      case NonFatal(ex) =>
-        log.error("Error on application startup", ex)
-        throw ex
-    }
-
-  private lazy val log = LoggerFactory.getLogger(getClass)
+  private def makeMaterializer[F[_]](actorSystem: ActorSystem)(implicit F: Sync[F]): Resource[F, ActorMaterializer] =
+    Resource.make(
+      F.delay(ActorMaterializer()(actorSystem))
+    )(
+      materializer => F.delay(materializer.shutdown())
+    )
 
 }
