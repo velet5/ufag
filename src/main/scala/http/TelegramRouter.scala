@@ -2,7 +2,7 @@ package http
 
 import akka.http.scaladsl.server.Route
 import cats.effect.{Effect, Sync}
-import model.telegram.TelegramUpdate
+import model.telegram.Update
 import model.telegram.Ok
 import tapir._
 import tapir.json.circe._
@@ -19,13 +19,13 @@ class TelegramRouter[F[_]: Effect](
     endpoint
       .post
       .in("ufag")
-      .in(jsonBody[TelegramUpdate])
+      .in(jsonBody[Update])
       .out(jsonBody[Ok])
       .toRoute(handle)
 
   // internal
 
-  private def handle(request: TelegramUpdate): Future[Either[Unit, Ok]] =
+  private def handle(request: Update): Future[Either[Unit, Ok]] =
     toFuture(
       telegramUpdateHandler.handle(request)
     )

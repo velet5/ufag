@@ -1,10 +1,10 @@
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import cats.effect.{Effect, Resource, Sync}
-import conf.Configuration
-import wiring.{HttpModule, TelegramModule}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import conf.Configuration
+import wiring.{HandlerModule, HttpModule, TelegramModule}
 
 case class Application[F[_]](
   actorSystem: ActorSystem,
@@ -12,6 +12,7 @@ case class Application[F[_]](
   configuration: Configuration,
   httpModule: HttpModule,
   telegramModule: TelegramModule[F],
+  handlerModule: HandlerModule[F],
 )
 
 object Application {
@@ -35,14 +36,15 @@ object Application {
       config <- Configuration.create
       telegramModule <- TelegramModule.create
       httpModule <- HttpModule.create(telegramModule)
+      handlerModule <- HandlerModule.create
     } yield Application(
       actorSystem,
       actorMaterializer,
       config,
       httpModule,
-      telegramModule
+      telegramModule,
+      handlerModule,
     )
-
 
   private def makeActorSystem[F[_]](implicit F: Sync[F]): Resource[F, ActorSystem] =
     Resource.make(F.delay(ActorSystem()))(system => F.delay(system.terminate()))

@@ -1,11 +1,11 @@
 package telegram
 
 import cats.effect.Sync
-import model.telegram.{Ok, TelegramUpdate}
+import model.telegram.{Ok, Update}
 
 class TelegramUpdateHandler[F[_]] {
 
-  def handle(update: TelegramUpdate): F[Ok] = ???
+  def handle(update: Update): F[Ok] = ???
 
 }
 

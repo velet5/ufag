@@ -14,6 +14,7 @@ libraryDependencies ++= {
     val log4cats = "0.3.0"
     val logback = "1.2.3"
     val manatki = "0.8.0"
+    val mouse = "0.21"
     val postgres = "42.2.2"
     val pureconfig = "0.11.0"
     val sentry = "1.7.16"
@@ -38,6 +39,7 @@ libraryDependencies ++= {
   val logback = "ch.qos.logback" % "logback-classic" % Version.logback
   val manatkiDerevoCore = "org.manatki" %% "derevo-core" % Version.manatki
   val manatkiDerevoCirce = "org.manatki" %% "derevo-circe" % Version.manatki
+  val mouse = "org.typelevel" %% "mouse" % Version.mouse
   val postgres = "org.postgresql" % "postgresql" % Version.postgres
   val pureconfig = "com.github.pureconfig" %% "pureconfig" % Version.pureconfig
   val pureconfigCatsEffect = "com.github.pureconfig" %% "pureconfig-cats-effect" % Version.pureconfig
@@ -66,6 +68,7 @@ libraryDependencies ++= {
     logback,
     manatkiDerevoCore,
     manatkiDerevoCirce,
+    mouse,
     postgres,
     pureconfig,
     pureconfigCatsEffect,
