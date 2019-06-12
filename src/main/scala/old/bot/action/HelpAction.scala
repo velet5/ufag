@@ -14,7 +14,7 @@ private object HelpAction {
        |_?luxury_ или _?бурбон_ .
        |
        |/ask - связаться с создателями бота.
-       |/help - вывести это сообщение.       |
+       |/help - вывести это сообщение.
      """.stripMargin
 }
 

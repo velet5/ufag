@@ -2,17 +2,17 @@ package wiring
 
 import cats.effect.Sync
 import cats.syntax.functor._
-import telegram.TelegramUpdateHandler
+import telegram.TelegramClient
 
 case class TelegramModule[F[_]](
-  telegramUpdateHandler: TelegramUpdateHandler[F]
+  telegramClient: TelegramClient[F],
 )
 
 object TelegramModule {
 
-  def create[F[_]](implicit F: Sync[F]): F[TelegramModule[F]] =
+  def create[F[_] : Sync](commonModule: CommonModule[F]): F[TelegramModule[F]] =
     for {
-      handler <- TelegramUpdateHandler.create
-    } yield TelegramModule(handler)
+      telegramClient <- TelegramClient.create[F](commonModule.sttpBackend)
+    } yield TelegramModule(telegramClient)
 
 }

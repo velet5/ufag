@@ -1,32 +1,33 @@
 package model.telegram
 
-import io.circe.derivation.renaming.snakeCase
-import io.circe.{Decoder, Encoder}
-import org.manatki.derevo.circeDerivation.{decoder, encoder}
-import org.manatki.derevo.derive
+import io.circe.generic.extras.ConfiguredJsonCodec
+import model.telegram.Update._
+import util.circe.CirceCodec
+import model.JsonConfig.snakeCase
 
-@derive(decoder(snakeCase), encoder(snakeCase))
+@ConfiguredJsonCodec
 case class Update(
-  chat: Chat,
- // message: Option[Message]
+  message: Option[Message]
 )
 
-@derive(decoder(snakeCase), encoder(snakeCase))
-case class Chat(
-  id: ChatId,
-)
+object Update {
 
-case class ChatId(id: Long)
+  @ConfiguredJsonCodec
+  case class Chat(
+    id: ChatId,
+  )
 
-object ChatId {
-  implicit val decoder: Decoder[ChatId] = Decoder.decodeLong.map(ChatId(_))
-  implicit val encoder: Encoder[ChatId] = Encoder.encodeLong.contramap(_.id)
+  case class ChatId(id: Long)
+
+  object ChatId {
+    implicit val circeCodec: CirceCodec[ChatId] = CirceCodec.codecLong.imap(ChatId(_), _.id)
+  }
+
+  @ConfiguredJsonCodec
+  case class Message(
+    messageId: Long,
+    chat: Chat,
+    text: Option[String],
+  )
+
 }
-
-@derive(decoder(snakeCase), encoder(snakeCase))
-case class Message(
-  messageId: Long,
-  chat: Chat,
-  replyToMessage: Option[Message],
-  text: Option[String],
-)

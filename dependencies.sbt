@@ -13,13 +13,13 @@ libraryDependencies ++= {
     val liquibase = "3.6.2"
     val log4cats = "0.3.0"
     val logback = "1.2.3"
-    val manatki = "0.8.0"
+    val monixCatnap = "3.0.0-RC2-379831b"
     val mouse = "0.21"
     val postgres = "42.2.2"
     val pureconfig = "0.11.0"
     val sentry = "1.7.16"
     val slick = "3.2.3"
-    val sttp = "1.5.17"
+    val sttp = "1.5.19"
     val tapir = "0.7.10"
   }
 
@@ -28,17 +28,18 @@ libraryDependencies ++= {
   val apacheCommonsLang = "org.apache.commons" % "commons-lang3" % Version.apacheCommonsLang
   val apacheCommonsText = "org.apache.commons" % "commons-text" % Version.apacheCommonsText
   val apacheHttpAsyncClient = "org.apache.httpcomponents" % "httpasyncclient" % Version.httpAsyncClient
+  val asyncHttpClientBackendCats = "com.softwaremill.sttp" %% "async-http-client-backend-cats" % Version.sttp
   val catsCore = "org.typelevel" %% "cats-core" % Version.cats
   val catsEffect = "org.typelevel" %% "cats-effect" % Version.catsEffect
   val circeCore = "io.circe" %% "circe-core" % Version.circe
   val circeGeneric = "io.circe" %% "circe-generic" % Version.circe
+  val circeGenericExtras = "io.circe" %% "circe-generic-extras" % Version.circe
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % Version.jackson
   val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % Version.jackson
   val liquibase = "org.liquibase" % "liquibase-core" % Version.liquibase
   val log4cats = "io.chrisdavenport" %% "log4cats-slf4j" % Version.log4cats
   val logback = "ch.qos.logback" % "logback-classic" % Version.logback
-  val manatkiDerevoCore = "org.manatki" %% "derevo-core" % Version.manatki
-  val manatkiDerevoCirce = "org.manatki" %% "derevo-circe" % Version.manatki
+  val monixCatnap = "io.monix" %% "monix-catnap" % Version.monixCatnap
   val mouse = "org.typelevel" %% "mouse" % Version.mouse
   val postgres = "org.postgresql" % "postgresql" % Version.postgres
   val pureconfig = "com.github.pureconfig" %% "pureconfig" % Version.pureconfig
@@ -57,17 +58,18 @@ libraryDependencies ++= {
     apacheCommonsLang,
     apacheCommonsText,
     apacheHttpAsyncClient,
+    asyncHttpClientBackendCats,
     catsCore,
     catsEffect,
     circeCore,
     circeGeneric,
+    circeGenericExtras,
     jacksonCore,
     jacksonModuleScala,
     liquibase,
     log4cats,
     logback,
-    manatkiDerevoCore,
-    manatkiDerevoCirce,
+    monixCatnap,
     mouse,
     postgres,
     pureconfig,
