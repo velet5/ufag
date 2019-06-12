@@ -20,6 +20,8 @@
         </filter>
     </appender>
 
+    <logger name="akka" level="INFO"/>
+
     <root level="info">
         <appender-ref ref="DAYFILE" />
         <appender-ref ref="SENTRY" />

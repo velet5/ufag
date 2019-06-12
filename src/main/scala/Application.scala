@@ -1,11 +1,9 @@
 import cats.effect.{Effect, Resource}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import conf.Configuration
 import wiring._
 
 case class Application[F[_]](
-  configuration: Configuration,
   commonModule: CommonModule[F],
   httpModule: HttpModule,
   telegramModule: TelegramModule[F],
@@ -24,13 +22,11 @@ object Application {
     commonModule: CommonModule[F]
   ): F[Application[F]] =
     for {
-      config <- Configuration.create
       telegramModule <- TelegramModule.create(commonModule)
       botModule <- BotModule.create(telegramModule)
       serviceModule <- ServiceModule.create(botModule)
       httpModule <- HttpModule.create(serviceModule)
     } yield Application(
-      config,
       commonModule,
       httpModule,
       telegramModule,

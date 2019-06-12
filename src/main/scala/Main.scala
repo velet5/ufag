@@ -17,7 +17,9 @@ object Main extends IOApp {
   // internal
 
   private def go(log: Logger[IO]) =
-    makeBinding(log).use(runApplication(_, log).as(ExitCode.Success))
+    makeBinding(log)
+      .use(runApplication(_, log))
+      .as(ExitCode.Success)
 
   private def makeBinding(log: Logger[IO]): Resource[IO, ServerBinding] =
     Application.resource[IO] >>= bindAkkaHttp(log)
@@ -33,7 +35,7 @@ object Main extends IOApp {
     implicit val actorSystem: ActorSystem = application.commonModule.actorSystem
     implicit val actorMaterializer: ActorMaterializer = application.commonModule.actorMaterializer
 
-    val config = application.configuration.ufag
+    val config = application.commonModule.configuration.ufag
     val port = config.port
     val interface = "localhost"
 

@@ -12,7 +12,11 @@ object TelegramModule {
 
   def create[F[_] : Sync](commonModule: CommonModule[F]): F[TelegramModule[F]] =
     for {
-      telegramClient <- TelegramClient.create[F](commonModule.sttpBackend)
+      telegramClient <- TelegramClient.create[F](
+        commonModule.configuration.telegram
+      )(
+        Sync[F], commonModule.sttpBackend
+      )
     } yield TelegramModule(telegramClient)
 
 }

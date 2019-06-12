@@ -8,6 +8,8 @@ libraryDependencies ++= {
     val cats = "1.6.0"
     val catsEffect = "1.3.0"
     val circe = "0.11.1"
+    val enumeratum = "1.5.13"
+    val enumeratumCirce = "1.5.21"
     val httpAsyncClient = "4.1.3"
     val jackson = "2.9.5"
     val liquibase = "3.6.2"
@@ -24,6 +26,7 @@ libraryDependencies ++= {
   }
 
   val akkaHttp = "com.typesafe.akka" %% "akka-http" % Version.akkaHttp
+  val akkaSl4j = "com.typesafe.akka" %% "akka-slf4j" % Version.akka
   val akkaStream = "com.typesafe.akka" %% "akka-stream" % Version.akka
   val apacheCommonsLang = "org.apache.commons" % "commons-lang3" % Version.apacheCommonsLang
   val apacheCommonsText = "org.apache.commons" % "commons-text" % Version.apacheCommonsText
@@ -34,6 +37,8 @@ libraryDependencies ++= {
   val circeCore = "io.circe" %% "circe-core" % Version.circe
   val circeGeneric = "io.circe" %% "circe-generic" % Version.circe
   val circeGenericExtras = "io.circe" %% "circe-generic-extras" % Version.circe
+  val enumeratum = "com.beachape" %% "enumeratum" % Version.enumeratum
+  val enumeratumCirce = "com.beachape" %% "enumeratum-circe" % Version.enumeratumCirce
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % Version.jackson
   val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % Version.jackson
   val liquibase = "org.liquibase" % "liquibase-core" % Version.liquibase
@@ -48,12 +53,14 @@ libraryDependencies ++= {
   val sentryLogback = "io.sentry" % "sentry-logback" % Version.sentry
   val slick = "com.typesafe.slick" %% "slick" % Version.slick
   val sttpCore = "com.softwaremill.sttp" %% "core" % Version.sttp
+  val sttpCirce = "com.softwaremill.sttp" %% "circe" % Version.sttp
   val tapirCore = "com.softwaremill.tapir" %% "tapir-core" % Version.tapir
   val tapirAkkaHttpServer = "com.softwaremill.tapir" %% "tapir-akka-http-server" % Version.tapir
   val tapirJsonCirce = "com.softwaremill.tapir" %% "tapir-json-circe" % Version.tapir
 
   Seq(
     akkaHttp,
+    akkaSl4j,
     akkaStream,
     apacheCommonsLang,
     apacheCommonsText,
@@ -64,6 +71,8 @@ libraryDependencies ++= {
     circeCore,
     circeGeneric,
     circeGenericExtras,
+    enumeratum,
+    enumeratumCirce,
     jacksonCore,
     jacksonModuleScala,
     liquibase,
@@ -78,6 +87,7 @@ libraryDependencies ++= {
     sentryLogback,
     slick,
     sttpCore,
+    sttpCirce,
     tapirCore,
     tapirAkkaHttpServer,
     tapirJsonCirce,
