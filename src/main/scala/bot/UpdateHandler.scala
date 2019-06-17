@@ -1,12 +1,11 @@
-package service
+package bot
 
-import bot.Handler
 import cats.MonadError
 import cats.effect.Sync
 import cats.syntax.functor._
 import model.telegram.{Ok, Update}
 
-class UpdateProcessingService[F[_]](
+class UpdateHandler[F[_]](
   handlers: List[Handler[F, _]]
 )(
   implicit F: MonadError[F, Throwable]
@@ -21,14 +20,14 @@ class UpdateProcessingService[F[_]](
 
 }
 
-object UpdateProcessingService {
+object UpdateHandler {
 
   def create[F[_]](
     handlers: List[Handler[F, _]]
   )(
     implicit F: Sync[F]
-  ): F[UpdateProcessingService[F]] =
-    F.delay(new UpdateProcessingService[F](handlers))
+  ): F[UpdateHandler[F]] =
+    F.delay(new UpdateHandler[F](handlers))
 
   case class Fail() extends RuntimeException()
 

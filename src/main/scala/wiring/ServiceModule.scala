@@ -1,18 +1,16 @@
 package wiring
 
+import cats.Applicative
 import cats.effect.Sync
-import cats.syntax.functor._
-import service.UpdateProcessingService
+import slick.dbio.DBIO
 
-case class ServiceModule[F[_]](
-  updateProcessingService: UpdateProcessingService[F]
-)
+case class ServiceModule[F[_]]()
 
 object ServiceModule {
 
-  def create[F[_] : Sync](botModule: BotModule[F]): F[ServiceModule[F]] =
-    for {
-      updateProcessingService <- UpdateProcessingService.create(botModule.handlers)
-    } yield ServiceModule(updateProcessingService)
+  def create[F[_] : Sync](
+    repositoryModule: RepositoryModule[DBIO],
+  ): F[ServiceModule[F]] =
+    Applicative[F].pure(ServiceModule())
 
 }

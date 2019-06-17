@@ -1,21 +1,25 @@
 package wiring
 
-import bot.Handler
-import bot.action.HelpAction
+import bot.action.{HelpAction, StatAction}
 import bot.parser.ParserUtils.parseSimpleRequest
+import bot.{Handler, UpdateHandler}
 import cats.effect.Sync
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import model.bot.Command.{Help, Start}
+import cats.~>
+import model.bot.Command.{Help, Start, Statistics}
 
 case class BotModule[F[_]](
-  handlers: List[Handler[F, _]],
+  updateHandler: UpdateHandler[F]
 )
 
 object BotModule {
 
-  def create[F[_] : Sync](telegramModule: TelegramModule[F]): F[BotModule[F]] =
-
+  def create[F[_] : Sync, Db[_]](
+    transact: Db ~> F,
+    telegramModule: TelegramModule[F],
+    repositoryModule: RepositoryModule[Db]
+  ): F[BotModule[F]] =
     for {
       startHandler <- Handler.create[F, Start](
         parseSimpleRequest(_, "/start", _ => Start),
@@ -25,11 +29,19 @@ object BotModule {
         parseSimpleRequest(_, "/help", _ => Help),
         new HelpAction[F, Help](telegramModule.telegramClient)
       )
-    } yield BotModule(
-      List(
+      statisticsHandler <- Handler.create[F, Statistics](
+        parseSimpleRequest(_, "/stat", _ => Statistics),
+        new StatAction[F, Db](
+          telegramModule.telegramClient,
+          repositoryModule.queryRepository,
+          transact,
+        )
+      )
+      updateHandler <- UpdateHandler.create(List(
         startHandler,
         helpHandler,
-      )
-    )
+        statisticsHandler,
+      ))
+    } yield BotModule(updateHandler)
 
 }

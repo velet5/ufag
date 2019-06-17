@@ -14,7 +14,6 @@ import model.telegram.{ChatId, Message, Response, Sending}
 
 import scala.util.control.NoStackTrace
 
-
 trait TelegramClient[F[_]] {
   def send(chatId: ChatId, message: String): F[Message]
 }

@@ -6,8 +6,10 @@ object Command {
 
   type Start = Start.type
   type Help = Help.type
+  type Statistics = Statistics.type
 
-  object Help extends Command
-  object Start extends Command
+  case object Help extends Command
+  case object Start extends Command
+  case object Statistics extends Command
 
 }

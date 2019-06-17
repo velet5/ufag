@@ -1,10 +1,11 @@
-import cats.effect.{Effect, Resource}
+import cats.effect.{ConcurrentEffect, Effect, Resource}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import slick.dbio.DBIO
 import wiring._
 
-case class Application[F[_]](
-  commonModule: CommonModule[F],
+case class Application[F[_], Db[_]](
+  commonModule: CommonModule[F, Db],
   httpModule: HttpModule,
   telegramModule: TelegramModule[F],
   botModule: BotModule[F],
@@ -13,19 +14,20 @@ case class Application[F[_]](
 
 object Application {
 
-  def resource[F[_]](implicit F: Effect[F]): Resource[F, Application[F]] =
+  def resource[F[_] : ConcurrentEffect]: Resource[F, Application[F, DBIO]] =
     CommonModule.resource[F].evalMap(makeApplication(_))
 
   // internal
 
   private def makeApplication[F[_] : Effect](
-    commonModule: CommonModule[F]
-  ): F[Application[F]] =
+    commonModule: CommonModule[F, DBIO]
+  ): F[Application[F, DBIO]] =
     for {
       telegramModule <- TelegramModule.create(commonModule)
-      botModule <- BotModule.create(telegramModule)
-      serviceModule <- ServiceModule.create(botModule)
-      httpModule <- HttpModule.create(serviceModule)
+      repositoryModule <- RepositoryModule.create
+      serviceModule <- ServiceModule.create(repositoryModule)
+      botModule <- BotModule.create(commonModule.transact, telegramModule, repositoryModule)
+      httpModule <- HttpModule.create(botModule)
     } yield Application(
       commonModule,
       httpModule,

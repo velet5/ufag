@@ -8,6 +8,7 @@ import cats.syntax.functor._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monix.catnap.syntax._
+import slick.dbio.DBIO
 
 object Main extends IOApp {
 
@@ -30,7 +31,7 @@ object Main extends IOApp {
   private def bindAkkaHttp(
     log: Logger[IO]
   )(
-    application: Application[IO]
+    application: Application[IO, DBIO]
   ): Resource[IO, ServerBinding] = {
     implicit val actorSystem: ActorSystem = application.commonModule.actorSystem
     implicit val actorMaterializer: ActorMaterializer = application.commonModule.actorMaterializer

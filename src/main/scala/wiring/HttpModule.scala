@@ -11,9 +11,9 @@ case class HttpModule(
 
 object HttpModule {
 
-  def create[F[_]](serviceModule: ServiceModule[F])(implicit F: Effect[F]): F[HttpModule] =
+  def create[F[_]](botModule: BotModule[F])(implicit F: Effect[F]): F[HttpModule] =
     TelegramRouter
-      .create(serviceModule.updateProcessingService)
+      .create(botModule.updateHandler)
       .map(router => HttpModule(router.route))
 
 }
