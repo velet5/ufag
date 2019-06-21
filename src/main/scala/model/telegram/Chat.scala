@@ -6,18 +6,14 @@ import slick.lifted.Isomorphism
 import util.circe.CirceCodec
 
 @ConfiguredJsonCodec
-case class Message(
-  messageId: Message.Id,
-  chat: Chat,
-  text: Option[String],
-)
+case class Chat(id: Chat.Id)
 
-object Message {
+object Chat {
 
   case class Id(value: Long)
 
   object Id {
-    implicit val codec: CirceCodec[Id] = CirceCodec.codecLong.imap(Id(_), _.value)
+    implicit val circeCodec: CirceCodec[Id] = CirceCodec.codecLong.imap(Id(_), _.value)
     implicit val isomorphism: Isomorphism[Id, Long] = new Isomorphism(_.value, Id(_))
   }
 

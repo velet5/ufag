@@ -1,6 +1,6 @@
 package wiring
 
-import bot.action.{HelpAction, StatAction}
+import bot.action.{HelpAction, StatisticsAction}
 import bot.parser.ParserUtils.parseSimpleRequest
 import bot.{Handler, UpdateHandler}
 import cats.effect.Sync
@@ -31,7 +31,7 @@ object BotModule {
       )
       statisticsHandler <- Handler.create[F, Statistics](
         parseSimpleRequest(_, "/stat", _ => Statistics),
-        new StatAction[F, Db](
+        new StatisticsAction[F, Db](
           telegramModule.telegramClient,
           repositoryModule.queryRepository,
           transact,

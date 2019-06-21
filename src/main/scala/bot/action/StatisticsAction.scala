@@ -10,7 +10,7 @@ import mouse.anyf._
 import repository.QueryRepository
 import telegram.TelegramClient
 
-class StatAction[F[_] : Monad, Db[_]](
+class StatisticsAction[F[_] : Monad, Db[_]](
   telegramClient: TelegramClient[F],
   queryRepository: QueryRepository[Db],
   transact: Db ~> F,

@@ -1,5 +1,5 @@
 package model.bot
 
-import model.telegram.ChatId
+import model.telegram.Chat
 
-case class Request[C <: Command](chatId: ChatId, command: C)
+case class Request[C <: Command](chatId: Chat.Id, command: C)

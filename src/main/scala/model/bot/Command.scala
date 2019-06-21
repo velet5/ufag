@@ -1,5 +1,7 @@
 package model.bot
 
+import model.telegram.Message
+
 sealed trait Command
 
 object Command {
@@ -11,5 +13,6 @@ object Command {
   case object Help extends Command
   case object Start extends Command
   case object Statistics extends Command
+  case class Ask(messageId: Message.Id, text: Option[String]) extends Command
 
 }

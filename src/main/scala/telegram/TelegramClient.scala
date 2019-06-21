@@ -10,12 +10,13 @@ import conf.Configuration.TelegramProperties
 import conf.TelegramConfig
 import io.circe.Error
 import model.telegram.Sending.ParseMode
-import model.telegram.{ChatId, Message, Response, Sending}
+import model.telegram.{Chat, Message, Response, Sending}
 
 import scala.util.control.NoStackTrace
 
 trait TelegramClient[F[_]] {
-  def send(chatId: ChatId, message: String): F[Message]
+  def send(chatId: Chat.Id, message: String): F[Message]
+  def forward(from: Chat.Id, to: Chat.Id, messageId: Message.Id): F[Message]
 }
 
 object TelegramClient {
@@ -37,18 +38,24 @@ object TelegramClient {
     implicit sttpBackend: SttpBackend[F, Nothing]
   ) extends TelegramClient[F] {
 
-    override def send(chatId: ChatId, markdown: String): F[Message] =
+    override def send(chatId: Chat.Id, markdown: String): F[Message] =
       sttp
         .post(telegramConfig.sendMessageUri)
-        .body(message(chatId, markdown))
+        .body(Sending(chatId, markdown, ParseMode.Markdown))
         .response(asJson[Response[Message]])
         .send()
         .flatMap(response => processNetworkResponse(response.body))
 
+    override def forward(
+      from: Chat.Id,
+      to: Chat.Id,
+      messageId: Message.Id
+    ): F[Message] =
+      ???
+
+
     // internal
 
-    private def message(chatId: ChatId, markdownText: String): Sending =
-      Sending(chatId, markdownText, ParseMode.Markdown)
 
     private def processNetworkResponse(either: Either[
       String,

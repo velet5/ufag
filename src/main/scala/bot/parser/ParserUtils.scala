@@ -3,8 +3,7 @@ package bot.parser
 import cats.instances.option._
 import cats.syntax.flatMap._
 import model.bot.{Command, Request}
-import model.telegram.Message.Chat
-import model.telegram.{Message, Update}
+import model.telegram.{Chat, Message, Update}
 import mouse.any._
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.StringUtils.startsWith

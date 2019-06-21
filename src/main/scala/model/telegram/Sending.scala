@@ -9,7 +9,7 @@ import scala.collection.immutable
 
 @ConfiguredJsonCodec
 case class Sending(
-  chatId: ChatId,
+  chatId: Chat.Id,
   text: String,
   parseMode: ParseMode,
 )
