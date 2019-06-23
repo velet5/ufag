@@ -13,7 +13,8 @@ trait AskRepository[F[_]] extends Repository[F, AskingTable] {
 
 object AskRepository {
 
-  def create[F[_] : Sync]: F[AskRepository[DBIO]] = ???
+  def create[F[_] : Sync]: F[AskRepository[DBIO]] =
+    Sync[F].delay(new Impl)
 
   class Impl extends AskRepository[DBIO] {
 

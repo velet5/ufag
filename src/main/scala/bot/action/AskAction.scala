@@ -1,16 +1,23 @@
 package bot.action
 
 import bot.Action
-import cats.Functor
+import cats.syntax.apply._
+import cats.syntax.flatMap._
+import cats.syntax.functor._
+import cats.{Monad, ~>}
+import conf.Configuration.UfagProperties
 import model.bot.Command.Ask
 import model.bot.Request
+import model.repository.Asking
+import model.telegram.{Chat, Message}
+import repository.AskRepository
 import telegram.TelegramClient
-import cats.syntax.functor._
-import conf.Configuration.TelegramProperties
 
-class AskAction[F[_] : Functor](
+class AskAction[F[_] : Monad, Db[_]](
   telegramClient: TelegramClient[F],
-  telegramProperties: TelegramProperties,
+  ufagProperties: UfagProperties,
+  askRepository: AskRepository[Db],
+  transact: Db ~> F,
 ) extends Action[F, Ask] {
 
   import AskAction._
@@ -18,15 +25,43 @@ class AskAction[F[_] : Functor](
   override def run(request: Request[Ask]): F[Unit] =
     request.command.text match {
       case Some(_) =>
-         telegramClient
-          .forward(request.chatId, ???, request.command.messageId)
-          .void
+        (forward(request) >>= (save(request, _))) *> acknowledge(request)
 
       case None =>
-        telegramClient
-          .send(request.chatId, EmptyTextMessage)
-          .void
+        requireText(request)
     }
+
+  // internal
+
+  private def requireText(request: Request[Ask]): F[Unit] =
+    telegramClient
+      .send(request.chatId, EmptyTextMessage)
+      .void
+
+  private def forward(request: Request[Ask]): F[Message] =
+    telegramClient
+      .forward(
+        from = request.chatId,
+        to = Chat.Id(ufagProperties.ownerId),
+        messageId = request.command.messageId,
+      )
+
+  private def save(request: Request[Ask], message: Message): F[Unit] =
+    transact(
+      askRepository.save(Asking(
+        chatId = request.chatId,
+        originalMessageId = request.command.messageId,
+        ownerMessageId = message.messageId,
+      ))
+    ).void
+
+  private def acknowledge(request: Request[Ask]): F[Unit] =
+    telegramClient
+      .send(
+        chatId = request.chatId,
+        message = "Сообщение доставлено!",
+      )
+      .void
 
 }
 

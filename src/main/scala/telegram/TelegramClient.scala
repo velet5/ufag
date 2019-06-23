@@ -10,12 +10,13 @@ import conf.Configuration.TelegramProperties
 import conf.TelegramConfig
 import io.circe.Error
 import model.telegram.Sending.ParseMode
-import model.telegram.{Chat, Message, Response, Sending}
+import model.telegram.{Chat, Forwarding, Message, Response, Sending}
 
 import scala.util.control.NoStackTrace
 
 trait TelegramClient[F[_]] {
   def send(chatId: Chat.Id, message: String): F[Message]
+
   def forward(from: Chat.Id, to: Chat.Id, messageId: Message.Id): F[Message]
 }
 
@@ -51,17 +52,21 @@ object TelegramClient {
       to: Chat.Id,
       messageId: Message.Id
     ): F[Message] =
-      ???
-
+      sttp
+        .post(telegramConfig.forwardMessageUri)
+        .body(Forwarding(from, to, messageId))
+        .response(asJson[Response[Message]])
+        .send()
+        .flatMap(response => processNetworkResponse(response.body))
 
     // internal
 
-
-    private def processNetworkResponse(either: Either[
-      String,
-      Either[
-        DeserializationError[Error],
-        Response[Message]]]
+    private def processNetworkResponse(
+      either: Either[
+        String,
+        Either[
+          DeserializationError[Error],
+          Response[Message]]]
     ): F[Message] =
       either.fold(
         message => MonadError[F, Throwable].raiseError(SendingError.NetworkError(message)),

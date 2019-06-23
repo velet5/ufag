@@ -5,14 +5,16 @@ import conf.Configuration.TelegramProperties
 
 case class TelegramConfig(
   sendMessageUri: Uri,
+  forwardMessageUri: Uri,
 )
 
 object TelegramConfig {
-
   def fromConfiguration(telegramProperties: TelegramProperties): TelegramConfig =
     TelegramConfig(
-      sendMessageUri = uri(telegramProperties, "sendMessage")
+      sendMessageUri = uri(telegramProperties, "sendMessage"),
+      forwardMessageUri = uri(telegramProperties, "forwardMessage"),
     )
+
 
   // internal
 
