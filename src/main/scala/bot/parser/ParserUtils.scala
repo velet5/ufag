@@ -13,7 +13,7 @@ object ParserUtils {
   type CommandName = String
   type CommandText = String
 
-  def parseCommand(update: Update): Option[(Chat, CommandName, Option[CommandText])] = {
+  def parseCommand(update: Update): Option[(Message, CommandName, Option[CommandText])] = {
     def split(text: String) =
         StringUtils
           .split(text, " ", 2)
@@ -29,7 +29,7 @@ object ParserUtils {
     def parse(message: Message) =
       message.text
         .flatMap(_ |> split |> extract)
-        .map { case (name, text) => (message.chat, name, text) }
+        .map { case (name, text) => (message, name, text) }
 
     update.message >>= parse
   }
@@ -41,6 +41,6 @@ object ParserUtils {
   ): Option[Request[C]] =
     parseCommand(update)
       .filter { case (_, n, _) => n == name }
-      .map { case (chat, _, _) => Request(chat.id, constructor(update)) }
+      .map { case (message, _, _) => Request(message.chat.id, constructor(update)) }
 
 }

@@ -1,13 +1,15 @@
 package wiring
 
-import bot.action.{HelpAction, StatisticsAction}
-import bot.parser.ParserUtils.parseSimpleRequest
+import bot.action.{AskAction, HelpAction, StatisticsAction}
+import bot.parser.AskParser
+import bot.parser.ParserUtils._
 import bot.{Handler, UpdateHandler}
 import cats.effect.Sync
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.~>
-import model.bot.Command.{Help, Start, Statistics}
+import conf.Configuration
+import model.bot.Command.{Ask, Help, Start, Statistics}
 
 case class BotModule[F[_]](
   updateHandler: UpdateHandler[F]
@@ -18,7 +20,8 @@ object BotModule {
   def create[F[_] : Sync, Db[_]](
     transact: Db ~> F,
     telegramModule: TelegramModule[F],
-    repositoryModule: RepositoryModule[Db]
+    repositoryModule: RepositoryModule[Db],
+    configuration: Configuration,
   ): F[BotModule[F]] =
     for {
       startHandler <- Handler.create[F, Start](
@@ -37,10 +40,20 @@ object BotModule {
           transact,
         )
       )
+      askHandler <- Handler.create[F, Ask](
+        AskParser,
+        new AskAction(
+          telegramModule.telegramClient,
+          configuration.ufag,
+          repositoryModule.askRepository,
+          transact,
+        )
+      )
       updateHandler <- UpdateHandler.create(List(
         startHandler,
         helpHandler,
         statisticsHandler,
+        askHandler,
       ))
     } yield BotModule(updateHandler)
 

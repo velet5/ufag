@@ -26,7 +26,12 @@ object Application {
       telegramModule <- TelegramModule.create(commonModule)
       repositoryModule <- RepositoryModule.create
       serviceModule <- ServiceModule.create(repositoryModule)
-      botModule <- BotModule.create(commonModule.transact, telegramModule, repositoryModule)
+      botModule <- BotModule.create(
+        commonModule.transact,
+        telegramModule,
+        repositoryModule,
+        commonModule.configuration,
+      )
       httpModule <- HttpModule.create(botModule)
     } yield Application(
       commonModule,

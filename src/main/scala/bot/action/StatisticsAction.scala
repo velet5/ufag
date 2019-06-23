@@ -17,10 +17,16 @@ class StatisticsAction[F[_] : Monad, Db[_]](
 ) extends Action[F, Statistics] {
 
   def run(request: Request[Statistics]): F[Unit] =
-    queryRepository.count() ||> transact >>= (count =>
-      telegramClient
-        .send(request.chatId, s"**Запросов**: $count")
-        .void
+    queryRepository.count() ||> transact >>= (send(request, _))
+
+  // internal
+
+  private def send(request: Request[Statistics], count: Int): F[Unit] =
+    telegramClient
+      .send(
+        chatId = request.chatId,
+        message = s"**Запросов**: $count"
       )
+      .void
 
 }
