@@ -18,10 +18,16 @@ case class LexicalEntry(
   @JsonProperty("derivativeOf")
   derivatives: Option[Seq[Derivative]],
   language: String,
-  lexicalCategory: String,
+  lexicalCategory: LexicalCategory,
   pronunciations: Option[Seq[Pronunciation]],
   text: String,
   entries: Seq[Entry])
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+case class LexicalCategory(
+  id: String,
+  text: String,
+)
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 case class Derivative(text: String)

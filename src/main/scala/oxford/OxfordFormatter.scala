@@ -22,7 +22,7 @@ class OxfordFormatter {
   // private
 
   private def formatLexicalEntry(lexicalEntry: LexicalEntry, index: Option[Int] = None): String = {
-    val title = s"*${lexicalEntry.text}* (${lexicalEntry.lexicalCategory.toLowerCase})\n"
+    val title = s"*${lexicalEntry.text}* (${lexicalEntry.lexicalCategory.text.toLowerCase})\n"
     val pronunciation = lexicalEntry.pronunciations.map { pronunciations =>
       pronunciations.map("*[" + _.phoneticSpelling + "]*").mkString("", " / ", "\n")
     }
@@ -55,7 +55,7 @@ class OxfordFormatter {
   }
 
   private def formatSense(sense: Sense, index: Option[Int] = None, parentIndex: Option[Int] = None): String = {
-    val indexStr = parentIndex.fold(index.map(i => s"$i. "))(parent => index.map(i => s"_$parent.${i})_ "))
+    val indexStr = parentIndex.fold(index.map(i => s"$i. "))(parent => index.map(i => s"_$parent.$i)_ "))
     val maybeCrossReferences = sense.crossReferences.map(_.map(reference => s"_${reference.`type`}_ *${reference.text}* ").mkString(", "))
 
     val maybeDefinitions = sense.definitions.map {
