@@ -49,7 +49,6 @@ object Response {
 
       Response(statusCode, bodyOpt)
     }
-
 }
 
 object Request {
@@ -70,6 +69,14 @@ object Request {
       post.setEntity(toHttpEntity(body))
       post
   }
+
+  def str(request: Request): String =
+    request match {
+      case Get(uri, headers) =>
+        s"GET $uri . Headers: ${headers.map(h => s"${h.name}: ${h.value}").mkString("; ")}"
+      case Post(uri, headers, bodyOpt) =>
+        s"POST $uri . Headers: ${headers.map(h => s"${h.name}: ${h.value}").mkString("; ")}. ${bodyOpt.map("Body: " + _ + ".")}"
+    }
 
   private def toHttpHeaders(headers: Seq[Header]): Array[org.apache.http.Header] =
     headers.map(toHttpHeader).toArray

@@ -1,6 +1,7 @@
 package client
 
 import cats.syntax.option.catsSyntaxOptionId
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future
 
@@ -13,6 +14,12 @@ trait RestClient {
 }
 
 class RestClientImpl(httpClient: HttpClient[Request, Response]) extends RestClient {
-  override def execute(request: Request): Future[Response] =
+  override def execute(request: Request): Future[Response] = {
+    log.info(s"Execution http request ${Request.str(request)}")
     httpClient.execute(request)
+  }
+
+  // internal
+
+  private val log = LoggerFactory.getLogger(this.getClass)
 }
