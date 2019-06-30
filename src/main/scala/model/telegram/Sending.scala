@@ -12,6 +12,7 @@ case class Sending(
   chatId: Chat.Id,
   text: String,
   parseMode: ParseMode,
+  replyToMessageId: Option[Message.Id] = None,
 )
 
 object Sending {

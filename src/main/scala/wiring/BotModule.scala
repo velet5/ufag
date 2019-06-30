@@ -1,7 +1,7 @@
 package wiring
 
-import bot.action.{AskAction, HelpAction, StatisticsAction}
-import bot.parser.AskParser
+import bot.action.{AskAction, AskReplyAction, HelpAction, StatisticsAction}
+import bot.parser.{AskParser, AskReplyParser}
 import bot.parser.ParserUtils._
 import bot.{Handler, UpdateHandler}
 import cats.effect.Sync
@@ -9,7 +9,8 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.~>
 import conf.Configuration
-import model.bot.Command.{Ask, Help, Start, Statistics}
+import model.bot.Command.{Ask, AskReply, Help, Start, Statistics}
+import model.telegram.Chat
 
 case class BotModule[F[_]](
   updateHandler: UpdateHandler[F]
@@ -49,11 +50,20 @@ object BotModule {
           transact,
         )
       )
+      askReplyHandler <- Handler.create[F, AskReply](
+        new AskReplyParser(Chat.Id(configuration.ufag.ownerId)),
+        new AskReplyAction(
+          telegramModule.telegramClient,
+          repositoryModule.askRepository,
+          transact
+        )
+      )
       updateHandler <- UpdateHandler.create(List(
         startHandler,
         helpHandler,
         statisticsHandler,
         askHandler,
+        askReplyHandler,
       ))
     } yield BotModule(updateHandler)
 

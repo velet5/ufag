@@ -59,7 +59,7 @@ class AskAction[F[_] : Monad, Db[_]](
     telegramClient
       .send(
         chatId = request.chatId,
-        message = "Сообщение доставлено!",
+        text = "Сообщение доставлено!",
       )
       .void
 

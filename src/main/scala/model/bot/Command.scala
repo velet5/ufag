@@ -14,5 +14,6 @@ object Command {
   case object Start extends Command
   case object Statistics extends Command
   case class Ask(messageId: Message.Id, text: Option[String]) extends Command
+  case class AskReply(replyToMessageId: Message.Id, text: String) extends Command
 
 }
