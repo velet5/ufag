@@ -1,8 +1,6 @@
 package model.telegram
 
-import io.circe.Decoder
-import io.circe.generic.extras.ConfiguredJsonCodec
-import model.JsonConfig.snakeCase
+import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 
 @ConfiguredJsonCodec
 case class Response[A](
@@ -13,6 +11,6 @@ case class Response[A](
 
 object Response {
 
-
+  implicit val configuration: Configuration = Configuration.default.withSnakeCaseMemberNames
 
 }

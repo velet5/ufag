@@ -1,7 +1,9 @@
 package bot
 
+import bot.UpdateHandler.Fail
 import cats.MonadError
 import cats.effect.Sync
+import cats.syntax.applicativeError._
 import cats.syntax.functor._
 import model.telegram.{Ok, Update}
 
@@ -15,7 +17,7 @@ class UpdateHandler[F[_]](
     handlers
       .map(_.handle(update))
       .collectFirst { case Some(fu) => fu }
-      .getOrElse(F.raiseError(new RuntimeException))
+      .getOrElse(Fail.raiseError)
       .map(_ => Ok())
 
 }
@@ -29,6 +31,6 @@ object UpdateHandler {
   ): F[UpdateHandler[F]] =
     F.delay(new UpdateHandler[F](handlers))
 
-  case class Fail() extends RuntimeException()
+  object Fail extends RuntimeException("Failed to find handler for the request")
 
 }

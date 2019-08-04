@@ -13,9 +13,7 @@ object Handler {
   def create[F[_] : Sync, C <: Command](
     parser: Parser[C],
     action: Action[F, C],
-  ): F[Handler[F, C]] =
-    Sync[F].delay(
-      parser.parse(_).map(action.run)
-    )
+  ): Handler[F, C] =
+    parser.parse(_).map(action.run)
 
 }
