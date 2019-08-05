@@ -1,12 +1,11 @@
 package repository
 
-import cats.effect.Sync
 import model.repository.{Asking, AskingTable}
 import model.telegram.Message
 import slick.dbio.DBIO
 import slick.jdbc.PostgresProfile.api.{Query => _, _}
 
-trait AskRepository[F[_]] extends Repository[F, AskingTable] {
+trait AskRepository[F[_]] {
 
   def save(asking: Asking): F[Int]
 
@@ -16,10 +15,10 @@ trait AskRepository[F[_]] extends Repository[F, AskingTable] {
 
   object AskRepository {
 
-    def create[F[_] : Sync]: F[AskRepository[DBIO]] =
-      Sync[F].delay(new Impl)
+    def create: AskRepository[DBIO] =
+      new Impl
 
-    class Impl extends AskRepository[DBIO] {
+    class Impl extends AskRepository[DBIO] with Repository[DBIO, AskingTable]  {
 
       override def tableQuery = TableQuery[AskingTable]
 

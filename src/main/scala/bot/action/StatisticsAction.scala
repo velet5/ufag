@@ -4,11 +4,11 @@ import bot.Action
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.{Monad, ~>}
+import client.TelegramClient
 import model.bot.Command.Statistics
 import model.bot.Request
 import mouse.anyf._
 import repository.QueryRepository
-import telegram.TelegramClient
 
 class StatisticsAction[F[_] : Monad, Db[_]](
   telegramClient: TelegramClient[F],

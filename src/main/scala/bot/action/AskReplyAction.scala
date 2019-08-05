@@ -5,13 +5,13 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.option._
 import cats.{MonadError, ~>}
+import client.TelegramClient
 import model.bot.Command.AskReply
 import model.bot.Request
 import model.telegram.Message
 import mouse.any._
 import mouse.anyf._
 import repository.AskRepository
-import telegram.TelegramClient
 
 import scala.util.control.NoStackTrace
 

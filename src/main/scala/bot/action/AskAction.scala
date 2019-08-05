@@ -5,13 +5,13 @@ import cats.syntax.apply._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.{Monad, ~>}
+import client.TelegramClient
 import conf.Configuration.UfagProperties
 import model.bot.Command.Ask
 import model.bot.Request
 import model.repository.Asking
 import model.telegram.{Chat, Message}
 import repository.AskRepository
-import telegram.TelegramClient
 
 class AskAction[F[_] : Monad, Db[_]](
   telegramClient: TelegramClient[F],

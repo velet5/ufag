@@ -7,7 +7,7 @@ import wiring._
 case class Application[F[_], Db[_]](
   commonModule: CommonModule[F, Db],
   httpModule: HttpModule,
-  telegramModule: TelegramModule[F],
+  telegramModule: ClientModule[F],
   botModule: BotModule[F],
   serviceModule: ServiceModule[F],
 )
@@ -23,8 +23,8 @@ object Application {
     commonModule: CommonModule[F, DBIO]
   ): F[Application[F, DBIO]] =
     for {
-      telegramModule <- TelegramModule.create(commonModule)
-      repositoryModule <- RepositoryModule.create
+      telegramModule <- ClientModule.create(commonModule)
+      repositoryModule = RepositoryModule.create
       serviceModule <- ServiceModule.create(repositoryModule)
       botModule <- BotModule.create(
         commonModule.transact,

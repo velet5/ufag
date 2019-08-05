@@ -1,4 +1,4 @@
-package telegram
+package client
 
 import cats.MonadError
 import cats.effect.Sync

@@ -8,7 +8,7 @@ import model.telegram.Chat
 import slick.jdbc.PostgresProfile.api.{Query => _, _}
 import util.slick.Mappers._
 
-trait QueryRepository[F[_]] extends Repository[F, QueryTable] {
+trait QueryRepository[F[_]] {
   def save(query: Query): F[Int]
   def find(chatId: Chat.Id, text: String): F[Option[Query]]
   def count(): F[Int]
@@ -16,10 +16,10 @@ trait QueryRepository[F[_]] extends Repository[F, QueryTable] {
 
 object QueryRepository {
 
-  def create[F[_] : Sync]: F[QueryRepository[DBIO]] =
-    Sync[F].delay(new Impl())
+  def create: QueryRepository[DBIO]=
+    new Impl()
 
-  class Impl extends QueryRepository[DBIO] {
+  private class Impl extends QueryRepository[DBIO] with Repository[DBIO, QueryTable]  {
 
     override def tableQuery = TableQuery[QueryTable]
 

@@ -3,8 +3,8 @@ package bot.action
 import bot.Action
 import cats.Functor
 import cats.syntax.functor._
+import client.TelegramClient
 import model.bot.{Command, Request}
-import telegram.TelegramClient
 
 class HelpAction[F[_] : Functor, C <: Command](telegramClient: TelegramClient[F]) extends Action[F, C] {
 
