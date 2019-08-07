@@ -13,6 +13,8 @@ import conf.Configuration.PostgresProperties
 import monix.catnap.syntax.SyntaxForLiftFuture
 import slick.dbio.DBIO
 import slick.jdbc.PostgresProfile.api._
+import util.Clock
+import cats.effect.{Clock => CClock}
 
 import scala.concurrent.duration.DurationLong
 
@@ -22,23 +24,26 @@ case class CommonModule[F[_], Db[_]](
   sttpBackend: SttpBackend[F, Nothing],
   configuration: Configuration,
   transact: Db ~> F,
+  clock: Clock[F],
 )
 
 object CommonModule {
 
-  def resource[F[_] : ConcurrentEffect]: Resource[F, CommonModule[F, DBIO]] =
+  def resource[F[_] : ConcurrentEffect : CClock]: Resource[F, CommonModule[F, DBIO]] =
     for {
       actorSystem <- makeActorSystem
       actorMaterializer <- makeMaterializer(actorSystem)
       sttpBackend <- makeSttpBackend
       configuration <- Resource.liftF(Configuration.create)
       transact <- Resource.liftF(makeTransact[F](configuration.postgres))
+      clock <- Resource.pure(Clock.create(configuration.zoneId))
     } yield CommonModule(
       actorSystem,
       actorMaterializer,
       sttpBackend,
       configuration,
       transact,
+      clock,
     )
 
   private def makeActorSystem[F[_] : Sync]: Resource[F, ActorSystem] =

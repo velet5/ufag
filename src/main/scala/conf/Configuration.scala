@@ -1,11 +1,14 @@
 package conf
 
+import java.time.ZoneId
+
 import cats.effect.Sync
 import conf.Configuration._
 import pureconfig.module.catseffect.loadConfigF
 import pureconfig.generic.auto._
 
 final case class Configuration(
+  zoneId: ZoneId,
   lingvo: LingvoProperties,
   oxford: OxfordProperties,
   ufag: UfagProperties,

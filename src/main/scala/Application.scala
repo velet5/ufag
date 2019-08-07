@@ -1,4 +1,4 @@
-import cats.effect.{ConcurrentEffect, Effect, Resource}
+import cats.effect.{Clock, ConcurrentEffect, Effect, Resource}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import slick.dbio.DBIO
@@ -14,7 +14,7 @@ case class Application[F[_], Db[_]](
 
 object Application {
 
-  def resource[F[_] : ConcurrentEffect]: Resource[F, Application[F, DBIO]] =
+  def resource[F[_] : ConcurrentEffect : Clock]: Resource[F, Application[F, DBIO]] =
     CommonModule.resource[F].evalMap(makeApplication(_))
 
   // internal

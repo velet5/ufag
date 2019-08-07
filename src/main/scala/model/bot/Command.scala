@@ -22,4 +22,6 @@ object Command {
 
   case class DefineEn(text: String) extends Command
 
+  case class TranslateEn(text: String) extends Command
+
 }
