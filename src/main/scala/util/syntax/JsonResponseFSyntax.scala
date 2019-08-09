@@ -26,7 +26,7 @@ final class JsonResponseFOps[F[_], A](
 
   import JsonResponseError._
 
-  def extract(): F[A] =
+  def extractJson(): F[A] =
     responseF
       .flatMap(response =>
         response.body match {

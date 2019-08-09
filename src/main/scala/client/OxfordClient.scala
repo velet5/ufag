@@ -39,7 +39,7 @@ object  OxfordClient {
         .header("app_key", properties.apiKey)
         .response(asJson[OxfordDefinition])
         .send()
-        .extract()
+        .extractJson()
   }
 
 }
