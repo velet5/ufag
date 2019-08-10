@@ -1,19 +1,23 @@
 package wiring
 
 import cats.MonadError
-import cats.effect.Sync
+import cats.effect.{Concurrent, ContextShift, Sync}
+import cats.syntax.flatMap._
 import cats.syntax.functor._
-import client.{OxfordClient, TelegramClient}
+import client.{LingvoClient, OxfordClient, TelegramClient}
 import slick.dbio.DBIO
 
 case class ClientModule[F[_]](
   telegramClient: TelegramClient[F],
   oxfordClient: OxfordClient[F],
+  lingvoClient: LingvoClient[F],
 )
 
 object ClientModule {
 
-  def create[F[_] : Sync](commonModule: CommonModule[F, DBIO]): F[ClientModule[F]] =
+  def create[F[_] : Concurrent : ContextShift](
+    commonModule: CommonModule[F, DBIO]
+  ): F[ClientModule[F]] =
     for {
       telegramClient <- TelegramClient.create[F](
         commonModule.configuration.telegram
@@ -27,9 +31,16 @@ object ClientModule {
         MonadError[F, Throwable],
         commonModule.sttpBackend,
       )
+
+      lingvoClient <- LingvoClient.create(
+        commonModule.configuration.lingvo,
+      )(
+        Concurrent[F], ContextShift[F], commonModule.sttpBackend
+      )
     } yield ClientModule(
       telegramClient,
       oxfordClient,
+      lingvoClient,
     )
 
 }

@@ -1,4 +1,4 @@
-import cats.effect.{Clock, ConcurrentEffect, Effect, Resource}
+import cats.effect.{Clock, ConcurrentEffect, ContextShift, Effect, Resource}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import slick.dbio.DBIO
@@ -14,12 +14,12 @@ case class Application[F[_], Db[_]](
 
 object Application {
 
-  def resource[F[_] : ConcurrentEffect : Clock]: Resource[F, Application[F, DBIO]] =
+  def resource[F[_] : ConcurrentEffect : ContextShift : Clock]: Resource[F, Application[F, DBIO]] =
     CommonModule.resource[F].evalMap(makeApplication(_))
 
   // internal
 
-  private def makeApplication[F[_] : ConcurrentEffect](
+  private def makeApplication[F[_] : ConcurrentEffect : ContextShift](
     commonModule: CommonModule[F, DBIO]
   ): F[Application[F, DBIO]] =
     for {
@@ -30,6 +30,7 @@ object Application {
         commonModule.transact,
         telegramModule,
         repositoryModule,
+        commonModule,
         commonModule.configuration,
       )
       httpModule <- HttpModule.create(botModule)

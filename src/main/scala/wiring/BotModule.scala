@@ -2,14 +2,17 @@ package wiring
 
 import bot.action._
 import bot.parser.ParserUtils._
-import bot.parser.{AskParser, AskReplyParser, DefineEnParser}
+import bot.parser.{AskParser, AskReplyParser, DefineEnParser, ParserUtils}
 import bot.{Handler, UpdateHandler}
-import cats.effect.{Concurrent, Sync}
+import cats.effect.Concurrent
 import cats.syntax.functor._
 import cats.~>
+import client.LingvoClient.Lang
 import conf.Configuration
 import model.bot.Command._
+import model.repository.Article.Provider
 import model.telegram.Chat
+import util.text.LangUtils
 
 case class BotModule[F[_]](
   updateHandler: UpdateHandler[F]
@@ -21,6 +24,7 @@ object BotModule {
     transact: Db ~> F,
     clientModule: ClientModule[F],
     repositoryModule: RepositoryModule[Db],
+    commonModule: CommonModule[F, Db],
     configuration: Configuration,
   ): F[BotModule[F]] = {
     val helpHandler = Handler.create[F, Help](
@@ -71,6 +75,21 @@ object BotModule {
       ),
     )
 
+    val translateEnHandler = Handler.create[F, TranslateEn](
+      ParserUtils.noCommand(_, TranslateEn, !LangUtils.startsWithCyrillic(_)),
+      new LingvoAction(
+        articleRepository = repositoryModule.articleRepository,
+        queryRepository = repositoryModule.queryRepository,
+        telegramClient = clientModule.telegramClient,
+        lingvoClient = clientModule.lingvoClient,
+        transact = commonModule.transact,
+        clock = commonModule.clock,
+        from = Lang.En,
+        to = Lang.Ru,
+        provider = Provider.Lingvo,
+      )
+    )
+
     for {
       updateHandler <- UpdateHandler.create(List(
         startHandler,
@@ -79,6 +98,7 @@ object BotModule {
         askHandler,
         askReplyHandler,
         defineEnHandler,
+        translateEnHandler,
       ))
     } yield BotModule(updateHandler)
   }

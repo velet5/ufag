@@ -43,4 +43,14 @@ object ParserUtils {
       .filter { case (_, n, _) => n == name }
       .map { case (message, _, _) => Request(message.chat.id, constructor(update)) }
 
+  def noCommand[C <: Command](
+    update: Update,
+    constructor: String => C,
+    condition: String => Boolean = _ => true,
+  ): Option[Request[C]] =
+    for {
+      message <- update.message
+      text <- message.text if !text.startsWith("/") && condition(text)
+    } yield Request(message.chat.id, constructor(text))
+
 }

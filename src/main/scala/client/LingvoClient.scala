@@ -2,9 +2,15 @@ package client
 
 import java.nio.charset.StandardCharsets.UTF_8
 
-import cats.MonadError
+import cats.effect.concurrent.Deferred
+import cats.effect.{Concurrent, ContextShift}
 import cats.instances.string._
+import cats.syntax.applicativeError._
+import cats.syntax.apply._
+import cats.syntax.flatMap._
+import cats.syntax.functor._
 import cats.syntax.show._
+import cats.{Applicative, Show}
 import client.LingvoClient.Lang
 import com.softwaremill.sttp.Uri.QueryFragment.KeyValue
 import com.softwaremill.sttp.circe._
@@ -12,6 +18,8 @@ import com.softwaremill.sttp.{MonadError => _, _}
 import conf.Configuration.LingvoProperties
 import enumeratum.values.{StringEnum, StringEnumEntry}
 import model.client.LingvoArticle
+import monix.catnap.MVar
+import util.syntax.JsonResponseError.NotOkError
 import util.syntax.jsonResponseF._
 import util.syntax.responseF._
 import util.url.UrlUtils
@@ -30,12 +38,16 @@ trait LingvoClient[F[_]] {
 
 object LingvoClient {
 
-  def create[F[_] : MonadError[?[_], Throwable]](
+  def create[F[_] : Concurrent : ContextShift](
     properties: LingvoProperties,
   )(
     implicit sttpBackend: SttpBackend[F, Nothing],
-  ): LingvoClient[F] =
-    new Impl(properties)
+  ): F[LingvoClient[F]] =
+    for {
+      tokenVar <- MVar.empty[F, Deferred[F, Token]]()
+    } yield new Impl(
+      properties, tokenVar
+    )
 
   sealed abstract class Lang(val value: String) extends StringEnumEntry
 
@@ -50,8 +62,9 @@ object LingvoClient {
 
   // internal
 
-  private class Impl[F[_] : MonadError[?[_], Throwable]](
-    properties: LingvoProperties
+  private class Impl[F[_] : Concurrent](
+    properties: LingvoProperties,
+    tokenVar: MVar[F, Deferred[F, Token]],
   )(
     implicit sttpBackend: SttpBackend[F, Nothing],
   ) extends LingvoClient[F] {
@@ -61,14 +74,40 @@ object LingvoClient {
       from: Lang,
       to: Lang
     ): F[List[LingvoArticle]] =
-      sttp
-        .get(buildUri(word, from, to))
-        .header(???, ???)
-        .response(asJson[List[LingvoArticle]])
-        .send()
-        .extractJson()
+      authorized(token =>
+        sttp
+          .get(buildUri(word, from, to))
+          .header(HeaderNames.Authorization, token.show)
+          .response(asJson[List[LingvoArticle]])
+          .send()
+          .extractJson()
+      )
 
     // internal
+
+    private def authorized[A](fn: Token => F[A]): F[A] = {
+      def go: F[A] =
+        tokenVar.tryRead >>= {
+          case Some(deffered) => deffered.get >>= fn
+          case None => updateToken *> go
+        }
+
+      def retrieveToken =
+        Deferred[F, Token].flatMap(deferred =>
+          Concurrent[F]
+            .start(authenticate >>= deferred.complete)
+            .flatMap(_ => tokenVar.put(deferred))
+        )
+
+      def updateToken =
+        tokenVar
+          .tryTake
+          .flatMap(opt => Applicative[F].whenA(opt.isEmpty)(retrieveToken))
+
+      go.handleErrorWith {
+        case NotOkError(401, _) => updateToken *> go
+      }
+    }
 
     private def buildUri(word: String, from: Lang, to: Lang): Uri =
       uri"${properties.serviceUrl}/api/v1/Translation"
@@ -78,14 +117,21 @@ object LingvoClient {
           KeyValue("dstLang", to.value),
         ))
 
-    private def authenticate(): F[String] =
+    private def authenticate(): F[Token] =
       sttp
         .post(uri"${properties.serviceUrl}/api/v1.1/authenticate")
         .header(HeaderNames.Authorization, show"Basic ${properties.apiKey}")
         .response(asString(UTF_8.toString))
         .send()
         .extract()
+        .map(Token(_))
 
+  }
+
+  case class Token(value: String) extends AnyVal
+
+  object Token {
+    implicit val show: Show[Token] = Show(_.value)
   }
 
 }
