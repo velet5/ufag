@@ -4,7 +4,7 @@ import bot.action._
 import bot.parser.ParserUtils._
 import bot.parser.{AskParser, AskReplyParser, DefineEnParser}
 import bot.{Handler, UpdateHandler}
-import cats.effect.Sync
+import cats.effect.{Concurrent, Sync}
 import cats.syntax.functor._
 import cats.~>
 import conf.Configuration
@@ -17,7 +17,7 @@ case class BotModule[F[_]](
 
 object BotModule {
 
-  def create[F[_] : Sync, Db[_]](
+  def create[F[_] : Concurrent, Db[_]](
     transact: Db ~> F,
     clientModule: ClientModule[F],
     repositoryModule: RepositoryModule[Db],

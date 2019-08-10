@@ -30,7 +30,7 @@ trait LingvoClient[F[_]] {
 
 object LingvoClient {
 
-  def create[F[_] : MonadError[*[_], Throwable]](
+  def create[F[_] : MonadError[?[_], Throwable]](
     properties: LingvoProperties,
   )(
     implicit sttpBackend: SttpBackend[F, Nothing],
@@ -50,7 +50,7 @@ object LingvoClient {
 
   // internal
 
-  private class Impl[F[_] : MonadError[*[_], Throwable]](
+  private class Impl[F[_] : MonadError[?[_], Throwable]](
     properties: LingvoProperties
   )(
     implicit sttpBackend: SttpBackend[F, Nothing],

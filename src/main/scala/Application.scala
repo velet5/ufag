@@ -19,7 +19,7 @@ object Application {
 
   // internal
 
-  private def makeApplication[F[_] : Effect](
+  private def makeApplication[F[_] : ConcurrentEffect](
     commonModule: CommonModule[F, DBIO]
   ): F[Application[F, DBIO]] =
     for {

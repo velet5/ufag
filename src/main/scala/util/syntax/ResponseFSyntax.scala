@@ -11,7 +11,7 @@ import scala.util.control.NoStackTrace
 
 trait ResponseFSyntax {
 
-  final implicit def syntaxResponseF[F[_] : MonadError[*[_], Throwable], A](
+  final implicit def syntaxResponseF[F[_] : MonadError[?[_], Throwable], A](
     responseF: F[Response[A]]
   ): ResponseFOps[F, A] =
     new ResponseFOps(responseF)
