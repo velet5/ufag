@@ -40,7 +40,7 @@ dockerfile in docker := {
 
   new Dockerfile {
     // Base image
-    from("openjdk:8-jre-alpine")
+    from("openjdk:8u222-jre")
     // Add all files on the classpath
     add(classpath.files, "/app/")
     // Add the JAR file
