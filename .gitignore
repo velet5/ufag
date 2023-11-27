@@ -3,3 +3,7 @@
 target/
 application.conf
 logs/
+.bloop/
+/.metals/
+/.vscode/
+metals.sbt
